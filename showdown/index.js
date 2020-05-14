@@ -201,6 +201,7 @@ class Parser {
 
 	}
 	splitCommand(message) {
+		this.pmTarget = '';
 		this.cmd = '';
 		this.cmdToken = '';
 		this.target = '';
