@@ -7,7 +7,9 @@ class Client extends DiscordClient {
     constructor() {
         super()
         this.activity = `Usame con: ${Config.trigger}`;
-        this.plugins = new Plugins(this);
+		this.plugins = new Plugins(this);
+		this.lastUser = '';
+		this.lastMessage = '';
     }
 
     status() {
@@ -38,8 +40,7 @@ class Client extends DiscordClient {
 }
 class Plugins {
     constructor(bot) {
-        this.bot = bot;
-        this.commands = Object.create(null);
+		this.bot = bot;
     }
     splitCommand(message) {
 		this.cmd = '';
@@ -106,9 +107,13 @@ class Plugins {
 		return commandHandler;
     }
     parse(message) {
+		this.bot.lastMessage = message.content;
+		this.bot.lastUser = message.author;
+		this.channel = message.channel;
 		let commandHandler = this.splitCommand(message.content);
 
 		if (typeof commandHandler === 'function') {
+			if(toId(this.bot.lastUser.username) === toId(Config.name)) return; // Ignorar los  comandos dichos por el mismo bot
             const channel = message.channel;
             this.channel = channel;
             this.user = message.author;
@@ -124,7 +129,11 @@ class Plugins {
     }
     embedReply(title, data) {
         return this.sendReply(Embed.notify(title, data));
-    }
+	}
+	runHelp(help) {
+		let commandHandler = this.splitCommand(`.help ${help}`);
+		this.run(commandHandler);
+	}
     run(commandHandler) {
         if (typeof commandHandler === 'string') commandHandler = Chat.commands[commandHandler];
 		let result;

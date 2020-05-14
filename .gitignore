@@ -3,3 +3,4 @@
 !/config/config-example.js
 /node_modules
 package-lock.json
+report.*
