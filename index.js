@@ -1,5 +1,5 @@
 "use strict";
-const Tools = require('./lib/tools');
+const Tools = require('./tools');
 
 global.Chat = require('./chat');
 global.Monitor = require('./lib/monitor.js');
@@ -16,6 +16,7 @@ try {
 	);
 }
 global.Monitor = require('./lib/monitor.js');
+global.Tools = Tools;
 global.toId = Tools.toId;
 global.splint = Tools.splint;
 
@@ -27,3 +28,4 @@ const Showdown = require('./showdown');
 Showdown.connectTimer;
 
 Discord.connect();
+Chat.loadPlugins();

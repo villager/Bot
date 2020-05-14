@@ -14,9 +14,10 @@ class Bot extends EventEmitter {
         this.ip = server.ip;
         this.port = server.port;
         this.name = server.name;
-        this.pass = server.password;
+		this.pass = server.password;
         this.connection = new WebSocket(`ws://${this.ip}:${this.port}/showdown/websocket`);   
-        let self = this;
+		let self = this;
+		this.parser = new Parser(this);
         this.connection.on('open', function () {
             console.log(`${self.name} conectado correctamente a ${self.id}`);
 			self.connected = true;
@@ -28,7 +29,7 @@ class Bot extends EventEmitter {
 
 		this.connection.on('message', function (data) {
 			//log('> [' + self.id + '] ' + data, self.id);
-			var roomid = 'lobby';
+			let roomid = 'lobby';
 			if (data.charAt(0) === '>') {
 				roomid = data.substr(1, data.indexOf('\n') - 1);
 				data = data.substr(data.indexOf('\n') + 1, data.length);
@@ -110,15 +111,6 @@ class Bot extends EventEmitter {
             }
         }
     }
-    pmReply(user, data) {
-        this.parse(`/pm ${user}, ${data}`);
-    }
-    sendReply(message, pm) {
-        if(pm) {
-            this.parseChat()
-        }
-
-    }
     parse(roomid, data) {
 	var server = Config.servers[this.id];
 		if (data.charAt(0) !== '|') data = '||' + data;
@@ -130,10 +122,11 @@ class Bot extends EventEmitter {
 			this.login(server.name, server.password);
 			break;
 		case 'c:':
-//			this.parseChat(roomid, parts[3], parts.slice(4).join('|'), '');
+			this.parser.parse(roomid, parts[3], parts.slice(4).join('|').replace('\n', ''));
 //			this.logChat(toId(roomid), data);
 			break;
 		case 'c':
+			this.parser.parse(roomid, parts[2], parts.slice(3).join('|').replace('\n', ''));
 //			this.parseChat(roomid, parts[2], parts.slice(3).join('|'), '');
 			//this.logChat(toId(roomid), data);
 			break;
@@ -149,8 +142,8 @@ class Bot extends EventEmitter {
 			}
 			break;
 		case 'pm':
+			this.parser.parse(roomid, parts[2], parts.slice(4).join('|'), true);
 	//		if (~parts[4].indexOf('/invite') && Commands.hasPermission(parts[2], 'invite')) return server.send('/join ' + parts[4].remove('/invite '));
-	//		this.parseChat(roomid, parts[2], parts.slice(4).join('|'), '/msg ' + parts[2] + ', ');
 	//		sendTell(parts[2].substr(1, parts[2].length), server);
 			break;
 		case 'join':
@@ -200,26 +193,114 @@ class Bot extends EventEmitter {
 			//this.logChat(toId(roomid), parts.slice(2).join('|'));
 			break;
 		}
-    }
-    parseChat (room, user, message) {
-		if (!pm) pm = '';
-		if (message.charAt(0) === Config.trigger) {
-			var command = toId(message.substr(1, (~message.indexOf(' ') ? message.indexOf(' ') : message.length)));
-			var target = (~message.indexOf(' ') ? message.substr(message.indexOf(' '), message.length) : '');
-			if (Chat.commands[command]) {
-				while (typeof Chat.commands[command] !== 'function') {
-					command = Chat.commands[command];
+	}
+}
+class Parser {
+	constructor(bot) {
+		this.bot = bot;
+
+	}
+	splitCommand(message) {
+		this.cmd = '';
+		this.cmdToken = '';
+		this.target = '';
+		if (!message || !message.trim().length) return;
+
+
+        let cmdToken = message.charAt(0);
+        if(Config.trigger !== cmdToken) return;
+		if (cmdToken === message.charAt(1)) return;
+		let cmd = '', target = '';
+		let spaceIndex = message.indexOf(' ');
+		if (spaceIndex > 0) {
+			cmd = message.slice(1, spaceIndex).toLowerCase();
+			target = message.slice(spaceIndex + 1);
+		} else {
+			cmd = message.slice(1).toLowerCase();
+			target = '';
+		}
+
+		let curCommands = Chat.psCommands;
+		let commandHandler;
+		let fullCmd = cmd;
+
+		do {
+			if (Object.prototype.hasOwnProperty.call(curCommands, cmd)) {
+				commandHandler = curCommands[cmd];
+			} else {
+				commandHandler = undefined;
+			}
+			if (typeof commandHandler === 'string') {
+				// in case someone messed up, don't loop
+				commandHandler = curCommands[commandHandler];
+			} else if (Array.isArray(commandHandler) && !recursing) {
+				return this.splitCommand(cmdToken + 'help ' + fullCmd.slice(0, -4), true);
+			}
+			if (commandHandler && typeof commandHandler === 'object') {
+				let spaceIndex = target.indexOf(' ');
+				if (spaceIndex > 0) {
+					cmd = target.substr(0, spaceIndex).toLowerCase();
+					target = target.substr(spaceIndex + 1);
+				} else {
+					cmd = target.toLowerCase();
+					target = '';
 				}
-				if (typeof Chat.commands[command] === 'function') {
-					try {
-						Chat.commands[command].call(this, target, room, user);
-					} catch (e) {
-						Monitor.log(e.stack, this.id);
-					}
-				}
+
+				fullCmd += ' ' + cmd;
+				curCommands = commandHandler;
+			}
+		} while (commandHandler && typeof commandHandler === 'object');
+
+		if (!commandHandler && curCommands.default) {
+			commandHandler = curCommands.default;
+			if (typeof commandHandler === 'string') {
+				commandHandler = curCommands[commandHandler];
 			}
 		}
+		this.cmd = cmd;
+		this.cmdToken = cmdToken;
+		this.target = target;
+		this.fullCmd = fullCmd;
+
+		return commandHandler;
 	}
+	sendReply(data) {
+		if(this.pmTarget) return this.bot.send(`/pm ${this.pmTarget}, ${data}`, this.room);
+		return this.bot.send(data, this.room);
+	}
+    parse(room, user, message, pm) {
+		this.bot.lastMessage = message;
+		this.bot.lastUser = user;
+		let commandHandler = this.splitCommand(message);
+		if (typeof commandHandler === 'function') {
+			if(toId(this.bot.lastUser) === toId(Config.name)) return; // Ignorar los  comandos dichos por el mismo bot
+            this.user = user;
+			this.message = message;
+			this.room = room;
+			if(pm)this.pmTarget = user;
+        	this.run(commandHandler);
+		}        
+    }
+	runHelp(help) {
+		let commandHandler = this.splitCommand(`.help ${help}`);
+		this.run(commandHandler);
+	}
+	run(commandHandler) {
+        if (typeof commandHandler === 'string') commandHandler = Chat.psCommands[commandHandler];
+		let result;
+		try {
+			result = commandHandler.call(this, this.target, this.room, this.user, this.message);
+		} catch (err) {
+			Monitor.log(err,{
+				user: this.user.username,
+				message: this.message,
+				pmTarget: this.pmTarget && this.pmTarget,
+				room: this.room,
+			}, this.bot.id);;
+		}
+		if (result === undefined) result = false;
+		return result;      
+    }
 }
 function connect(server) {
 	if (!Config.servers[server]) return console.log('Server "' + server + '" not found.');

@@ -1,5 +1,7 @@
 "use strict";
 
+const Tools = module.exports = {};
+
 function toId(text) {
     if (text && text.id) {
         text = text.id;
@@ -50,5 +52,7 @@ function splint (target, separator, length) {
 	}
 	return cmdArr.map('trim');
 }
-exports.toId = toId;
-exports.splint = splint;
+Tools.toId = toId;
+Tools.splint = splint;
+Tools.FS = require('../lib/fs');
+Tools.Hastebin =  require('./hastebin');

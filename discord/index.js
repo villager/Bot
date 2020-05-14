@@ -27,7 +27,6 @@ class Client extends DiscordClient {
         this.status();
         this.logs();
         this.on('message', async message => {
-            Chat.loadPlugins();
             this.plugins.parse(message);
 
         });
