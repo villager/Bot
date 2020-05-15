@@ -61,7 +61,7 @@ import * as fsPath from '../lib/fs';
 import * as Bin from './hastebin';
 
 export const FS = fsPath.FS;
-export const hastebin = Bin;
+export const Hastebin = Bin;
 
 export function toName (text: any) {
 	if (!text) return '';

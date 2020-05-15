@@ -64,6 +64,8 @@ sucrase('./lib', './.lib-dist');
 sucrase('./tools', './.tools-dist');
 sucrase('./global', './.global-dist');
 sucrase('./discord', './.discord-dist');
+sucrase('./data', './.data-dist');
+
 
 // Make sure config.js exists. If not, copy it over synchronously from
 // config-example.js, since it's needed before we can start the bot

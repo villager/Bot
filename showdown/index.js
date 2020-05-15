@@ -24,8 +24,8 @@ class Bot extends EventEmitter {
 			this.connected = true;
 		});
 
-		this.connection.on('error', () => {
-            Monitor.log(error, false, this.id);
+		this.connection.on('error', (error) => {
+         //   Monitor.log(error, false, this.id);
 		});
 
 		this.connection.on('message', data => {

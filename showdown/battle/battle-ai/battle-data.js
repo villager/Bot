@@ -1,6 +1,6 @@
 "use strict";
 
-const DATA_DIR = '../../../data/';
+const DATA_DIR = '../../../.data-dist/';
 
 function getEffect (effect, gen) {
     if (!effect || typeof effect === 'string') {
