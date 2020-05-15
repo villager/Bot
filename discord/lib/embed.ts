@@ -1,13 +1,15 @@
-'use strict';
-const { MessageEmbed } = require('discord.js')
 
-class Embed extends MessageEmbed {
+import { MessageEmbed } from 'discord.js';
+
+
+class CustomEmbed extends MessageEmbed {
+    options: object;
     constructor(options = {}) {
         super(options);
     }
 
     new(options = {}) {
-        return new Embed(options);
+        return new CustomEmbed(options);
     }
 
     denied() {
@@ -17,12 +19,12 @@ class Embed extends MessageEmbed {
             .setDescription(`No tienes suficiente autoridad para usar este comando.`)
     }
 
-    notify(title, desc, color = [57, 140, 232]) {
+    notify(title:string, desc:string, color?: any) {
+        if(!color) color =  [57, 140, 232];
         return this.new()
             .setTitle(title)
             .setColor(color)
             .setDescription(desc);
     }
 }
-
-module.exports = new Embed();
+export const Embed = new CustomEmbed();

@@ -25,6 +25,6 @@ import * as Showdown from '../showdown';
 
 Showdown.connectTimer;
 
-Discord.connect();
+Discord.Bot.connect();
 
 Chat.loadPlugins();

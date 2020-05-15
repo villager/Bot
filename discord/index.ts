@@ -1,9 +1,12 @@
-"use strict";
+import * as DiscordClient from 'discord.js';
+import {Embed} from './lib/embed';
 
-const DiscordClient = require('discord.js').Client;
-const Embed = require('./lib/embed');
 
-class Client extends DiscordClient {
+class Client extends DiscordClient.Client {
+	activity: string;
+	plugins: Plugins;
+	lastUser: any;
+	lastMessage: string;
     constructor() {
         super()
         this.activity = `Usame con: ${Config.trigger}`;
@@ -38,9 +41,18 @@ class Client extends DiscordClient {
     }
 }
 class Plugins {
+	bot: Client;
+	cmd: string;
+	cmdToken: string;
+	target: string;
+	fullCmd: string;
+	channel: any;
+	user: any;
+	message: string;
     constructor(bot) {
 		this.bot = bot;
-    }
+	}
+	
     splitCommand(message) {
 		this.cmd = '';
 		this.cmdToken = '';
@@ -143,7 +155,7 @@ class Plugins {
 		this.run(commandHandler);
 	}
     run(commandHandler) {
-        if (typeof commandHandler === 'string') commandHandler = Chat.commands[commandHandler];
+        if (typeof commandHandler === 'string') commandHandler = Chat.discordCommands[commandHandler];
 		let result;
 		try {
 			result = commandHandler.call(this, this.target, this.user, this.message);
@@ -157,4 +169,4 @@ class Plugins {
 		return result;      
     }
 }
-module.exports = new Client();
+export const Bot = new Client();

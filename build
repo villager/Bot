@@ -63,6 +63,7 @@ try {
 sucrase('./lib', './.lib-dist');
 sucrase('./tools', './.tools-dist');
 sucrase('./global', './.global-dist');
+sucrase('./discord', './.discord-dist');
 
 // Make sure config.js exists. If not, copy it over synchronously from
 // config-example.js, since it's needed before we can start the bot
@@ -81,5 +82,5 @@ replace('.tools-dist', [
 	{regex: /(require\(.*?)(lib)/g, replace: `$1.lib-dist`},
 ]);
 replace('.global-dist', [
-	{regex: /(require\(.*?)(lib|tools)/g, replace: `$1.$2-dist`},
+	{regex: /(require\(.*?)(lib|tools|discord)/g, replace: `$1.$2-dist`},
 ]);

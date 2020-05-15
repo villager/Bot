@@ -14,10 +14,10 @@ export interface ChatCommands {
 	[k: string]: ChatHandler | string | string[] | true | ChatCommands;
 }
 export const Chat = new class {
-    globalCommands: AnyObject  = {}; // Interfance para los globales
-    psCommands: AnyObject  ={}; // Pokemon showdown 
-    discordCommands: AnyObject  = {}; // discord
-    packageData: AnyObject = {};
+    globalCommands: any  = {}; // Interfance para los globales
+    psCommands: any  ={}; // Pokemon showdown 
+    discordCommands: any  = {}; // discord
+    packageData: any = {};
     loadPlugins  () {
         // Load package
         void FS('package.json').readIfExists().then(data => {
@@ -36,10 +36,9 @@ export const Chat = new class {
         /**
          * Cargando comandos de Discord
          */
-    
         let discordFiles = FS('./discord/plugins').readdirSync();
         for (const file of discordFiles) {
-            const plugin = require(`../discord/plugins/${file}`);
+            const plugin = require(`../discord/plugins/${file.slice(0, -3)}`);
             if(plugin.commands) {
                 Object.assign(Chat.discordCommands, plugin.commands);
             }
