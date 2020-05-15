@@ -1,4 +1,4 @@
-/logs
+/logs/*
 /db
 !/db/*-example.json
 /config/*
@@ -6,3 +6,5 @@
 /node_modules
 package-lock.json
 report.*
+# Typescript build artifacts
+.*-dist/

@@ -252,7 +252,7 @@ class Bot extends EventEmitter {
 			break;
 		case 'deinit':
 				if (this.rooms[roomid]) {
-					this.emit('leaveroom', room);
+					this.emit('leaveroom', roomid);
 					delete this.rooms[roomid];
 					this.roomcount = Object.keys(this.rooms).length;
 				}

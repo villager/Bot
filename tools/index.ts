@@ -1,8 +1,4 @@
-"use strict";
-
-const Tools = module.exports = {};
-
-function toId(text) {
+export function toId(text: any) {
     if (text && text.id) {
         text = text.id;
     } else if (text && text.userid) {
@@ -15,14 +11,14 @@ function toId(text) {
     if (typeof text !== 'string' && typeof text !== 'number') return '';
     return ('' + text).toLowerCase().replace(/[^a-z0-9]+/g, '');
 }
-function toUserName(name) {
+export function toUserName(name : any) {
 	if(name && name.username) {
 		name = name.username;
 	} 
 	return ('' + name).toLowerCase().replace(/[^a-z0-9]+/g, '');
 
 }
-function splint (target, separator, length) {
+export function splint (target: any, separator:string, length: number) {
 	if (!separator) separator = ',';
 
 	let cmdArr = [];
@@ -61,17 +57,18 @@ function splint (target, separator, length) {
 	}
 	return cmdArr.map('trim');
 }
-Tools.toId = toId;
-Tools.splint = splint;
-Tools.toUserName = toUserName;
-Tools.FS = require('../lib/fs');
-Tools.Hastebin =  require('./hastebin');
-Tools.toName = function (text) {
+import * as fsPath from '../lib/fs';
+import * as Bin from './hastebin';
+
+export const FS = fsPath.FS;
+export const hastebin = Bin;
+
+export function toName (text: any) {
 	if (!text) return '';
 	return text.trim();
-};
+}
 
-Tools.escapeHTML = function (str) {
+export function escapeHTML(str:any) {
 	if (!str) return '';
 	return ('' + str).escapeHTML();
 };

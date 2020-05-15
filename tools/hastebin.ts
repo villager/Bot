@@ -1,7 +1,7 @@
-"use strict";
-const https = require('https');
 
-function upload(toUpload, callback) {
+import https from "https";
+
+export function upload(toUpload: any, callback: any) {
 	var reqOpts = {
 		hostname: "hastebin.com",
 		method: "POST",
@@ -23,7 +23,7 @@ function upload(toUpload, callback) {
 	req.write(toUpload);
 	req.end();
 }
-function download(key, callback) {
+export function download(key: any, callback: any) {
 	if (typeof callback !== "function") throw new Error("callback must be a function");
 	let url = 'https://hastebin.com/raw/' + key;
 	https.get(url, response => {
@@ -41,5 +41,3 @@ function download(key, callback) {
 		callback(null, err);
 	});
 }
-exports.upload = upload;
-exports.download = download;

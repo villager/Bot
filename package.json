@@ -1,12 +1,19 @@
 {
     "name": "Pokemon-Showdown-Chat-Bot",
-    "version": "1.0.0",
-    "main": "index.js",
+    "version": "1.0.2",
+    "main": "node build",
+    "scripts": {
+        "start": "node app",
+        "build": "node build",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
     "author": {
         "name": "Aldair Beltran",
         "email": "aldairbeltran3@hotmail.com"
     },
     "dependencies": {
+        "@types/node": "^14.0.1",
+        "sucrase": "^3.14.0",
         "discord.js": "^12.2.0",
         "node-static": "^0.7.11",
         "request": "^2.88.2",
