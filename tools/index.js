@@ -9,9 +9,18 @@ function toId(text) {
         text = text.userid;
     } else if (text && text.roomid) {
         text = text.roomid;
-    }
+    } else if (text && text.username) {
+		text = ('' + text).toLowerCase().replace(/[^a-z0-9]+/g, '');
+	}
     if (typeof text !== 'string' && typeof text !== 'number') return '';
     return ('' + text).toLowerCase().replace(/[^a-z0-9]+/g, '');
+}
+function toUserName(name) {
+	if(name && name.username) {
+		name = name.username;
+	} 
+	return ('' + name).toLowerCase().replace(/[^a-z0-9]+/g, '');
+
 }
 function splint (target, separator, length) {
 	if (!separator) separator = ',';
@@ -54,5 +63,15 @@ function splint (target, separator, length) {
 }
 Tools.toId = toId;
 Tools.splint = splint;
+Tools.toUserName = toUserName;
 Tools.FS = require('../lib/fs');
 Tools.Hastebin =  require('./hastebin');
+Tools.toName = function (text) {
+	if (!text) return '';
+	return text.trim();
+};
+
+Tools.escapeHTML = function (str) {
+	if (!str) return '';
+	return ('' + str).escapeHTML();
+};

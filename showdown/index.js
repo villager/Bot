@@ -3,9 +3,8 @@
 const WebSocket = require('ws');
 const request = require("request");
 const EventEmitter = require('events').EventEmitter;
-const fs = require('fs');
 let roomList = Object.create(null);
-let Servers = Object.create(null);
+const DEFAULT_ROOM = 'lobby';
 
 class Bot extends EventEmitter {
     constructor(server) {
@@ -15,35 +14,40 @@ class Bot extends EventEmitter {
         this.port = server.port;
         this.name = server.name;
 		this.pass = server.password;
+		this.rooms = server.rooms;
+		this.formats = Object.create(null); // No sabemos que formatos tienen :/
         this.connection = new WebSocket(`ws://${this.ip}:${this.port}/showdown/websocket`);   
-		let self = this;
+		this.connected = false;
 		this.parser = new Parser(this);
-        this.connection.on('open', function () {
-            console.log(`${self.name} conectado correctamente a ${self.id}`);
-			self.connected = true;
+		this.connection.on('open', () => {
+			console.log(`${this.name} conectado correctamente a ${this.id}`);
+			this.connected = true;
 		});
 
-		this.connection.on('error', function (error) {
-            Monitor.log(error, false, self.id);
+		this.connection.on('error', () => {
+            Monitor.log(error, false, this.id);
 		});
 
-		this.connection.on('message', function (data) {
-			//log('> [' + self.id + '] ' + data, self.id);
-			let roomid = 'lobby';
-			if (data.charAt(0) === '>') {
-				roomid = data.substr(1, data.indexOf('\n') - 1);
-				data = data.substr(data.indexOf('\n') + 1, data.length);
+		this.connection.on('message', data => {
+			if (typeof data !== "string") {
+				data = JSON.stringify(data);
 			}
-			if (roomid.substr(0, 6) === 'battle') {
-				var split = data.split('\n');
-				for (var line in split) {
-					self.parse(roomid, split[line]);
-				}
-				return;
-            }
-			self.parse(roomid, data);
+			this.lastMessage = Date.now();
+			this.emit('message', data);
+			this.receive(data);
 		}); 
-    }
+		Servers[this.id] = this;
+	}
+	sendRoom = function (room, data) {
+		if (!(data instanceof Array)) {
+			data = [data.toString()];
+		}
+		for (let i = 0; i < data.length; i++) {
+			data[i] = room + '|' + data[i];
+		}
+		return this.connection.send(data);
+	}
+
     send(msg, room) {
         if(!room) room = '';
         try {
@@ -70,10 +74,9 @@ class Bot extends EventEmitter {
 			};
 			request(options, callback);
 		}
-
 		function callback(error, response, body) {
-			if (body === ';') return log('Failed to log in, name is registered', self.serverid);
-			if (body.length < 50) return log('Failed to log in: ' + body, self.serverid);
+			if (body === ';') return log('Failed to log in, name is registered', self.id);
+			if (body.length < 50) return log('Failed to log in: ' + body, self.id);
 			if (~body.indexOf('heavy load')) {
 				log('Failed to log in - login server is under heavy load. Retrying in one minute.', self.serverid);
 				setTimeout(function () {
@@ -82,7 +85,7 @@ class Bot extends EventEmitter {
 				return;
 			}
 			if (body.substr(0, 16) === '<!DOCTYPE html>') {
-				log('Connection error 522 - retrying in one minute', self.serverid);
+				log('Connection error 522 - retrying in one minute', self.id);
 				setTimeout(function () {
 					self.login(name, pass);
 				}, 60 * 1000);
@@ -93,7 +96,7 @@ class Bot extends EventEmitter {
 				if (json.actionsuccess) {
 					self.send('/trn ' + name + ',0,' + json['assertion']);
 				} else {
-					log('Could not log in: ' + JSON.stringify(json), self.serverid);
+					log('Could not log in: ' + JSON.stringify(json), self.id);
 				}
 			} catch (e) {
 				self.send('/trn ' + name + ',0,' + body);
@@ -101,31 +104,114 @@ class Bot extends EventEmitter {
 		}
     }
     joinRoom(room) {
+		this.rooms[room] = {};
         this.send(`/join ${room}`);
     }
     joinAllRooms() {
         if(!roomList[this.id]) return;
         for (let i in roomList[this.id]) {
             for (const room of roomList[this.id][i]) {
-                this.send(`/join ${room}`);
+				this.send(`/join ${room}`);
             }
         }
-    }
-    parse(roomid, data) {
-	var server = Config.servers[this.id];
+	}
+	updateFormats(formats) {
+		let formatsArr = formats.split('|');
+		let commaIndex, formatData, code, name;
+		this.formats = {};
+		for (let i = 0; i < formatsArr.length; i++) {
+			commaIndex = formatsArr[i].indexOf(',');
+			if (commaIndex === -1) {
+				this.formats[toId(formatsArr[i])] = {name: formatsArr[i],
+					team: true, ladder: true, chall: true};
+			} else if (commaIndex === 0) {
+				i++;
+				continue;
+			} else {
+				name = formatsArr[i];
+				formatData = {name: name, team: true, ladder: true, chall: true};
+				code = commaIndex >= 0 ? parseInt(name.substr(commaIndex + 1), 16) : NaN;
+				if (!isNaN(code)) {
+					name = name.substr(0, commaIndex);
+					if (code & 1) formatData.team = false;
+					if (!(code & 2)) formatData.ladder = false;
+					if (!(code & 4)) formatData.chall = false;
+					if (!(code & 8)) formatData.disableTournaments = true;
+				} else {
+					if (name.substr(name.length - 2) === ',#') { // preset teams
+						formatData.team = false;
+						name = name.substr(0, name.length - 2);
+					}
+					if (name.substr(name.length - 2) === ',,') { // search-only
+						formatData.chall = false;
+						name = name.substr(0, name.length - 2);
+					} else if (name.substr(name.length - 1) === ',') { // challenge-only
+						formatData.ladder = false;
+						name = name.substr(0, name.length - 1);
+					}
+				}
+				formatData.name = name;
+				this.formats[toId(name)] = formatData;
+			}
+		}
+	}
+	receive(msg) {
+		this.receiveMsg(msg);
+	}
+	receiveMsg(msg) {
+		if (!msg) return;
+		if (msg.includes('\n')) {
+			let lines = msg.split('\n');
+			let room = DEFAULT_ROOM;
+			let firstLine = 0;
+			if (lines[0].charAt(0) === '>') {
+				room = lines[0].substr(1) || DEFAULT_ROOM;
+				firstLine = 1;
+			}
+			for (let i = firstLine; i < lines.length; i++) {
+				if (lines[i].split('|')[1] === 'init') {
+					for (let j = i; j < lines.length; j++) {
+						this.parse(room, lines[j], true);
+					}
+					break;
+				} else {
+					this.parse(room, lines[i], false);
+				}
+			}
+		} else {
+			this.parse(DEFAULT_ROOM, msg, false);
+		}
+	}
+    parse(roomid, data, isInit) {
+		let server = Config.servers[this.id];
 		if (data.charAt(0) !== '|') data = '||' + data;
 		let parts =(data).split('|');
+		let spl = data.substr(1).split('|');
+		this.emit('line', this, roomid, data, isInit, spl);
+		if (spl[1]) {
+			var thisEvent = (spl[0].charAt(0) !== '-') ? 'major' : 'minor';
+			this.emit(thisEvent, roomid, spl[0], data.substr(spl[0].length + 2), isInit);
+		} else {
+			this.emit('major', roomid, '', data, isInit);
+		}
 		switch (parts[1]) {
+		case 'formats':
+			let formats = data.substr(parts[1].length + 2);
+			this.updateFormats(formats);
+			this.emit('formats', formats);
+			break;
 		case 'challstr':
 			this.challengekeyid = parts[2];
 			this.challenge = parts[3];
 			this.login(server.name, server.password);
 			break;
 		case 'c:':
+			if(isInit) break;
 			this.parser.parse(roomid, parts[3], parts.slice(4).join('|').replace('\n', ''));
 //			this.logChat(toId(roomid), data);
 			break;
 		case 'c':
+			if(isInit) break;
 			this.parser.parse(roomid, parts[2], parts.slice(3).join('|').replace('\n', ''));
 //			this.parseChat(roomid, parts[2], parts.slice(3).join('|'), '');
 			//this.logChat(toId(roomid), data);
@@ -153,6 +239,35 @@ class Bot extends EventEmitter {
 		case 'l':
 		case 'L':
 			break;
+		case 'init':
+			this.rooms[roomid] = {
+				type: parts[2] || 'chat',
+				title: '',
+				users: {},
+				userCount: 0
+			};
+			this.roomcount = Object.keys(this.rooms).length;
+			this.emit('joinRoom', roomid, this.rooms[roomid].type);
+
+			break;
+		case 'deinit':
+				if (this.rooms[roomid]) {
+					this.emit('leaveroom', room);
+					delete this.rooms[roomid];
+					this.roomcount = Object.keys(this.rooms).length;
+				}
+			break;
+			case 'title':
+				if (this.rooms[roomid]) this.rooms[roomid].title = parts[2];
+				break;
+			case 'users':
+				if (!this.rooms[roomid]) break;
+				var userArr = data.substr(7).split(",");
+				this.rooms[roomid].userCount = parseInt(userArr[0]);
+				for (var k = 1; k < userArr.length; k++) {
+					this.rooms[roomid].users[toId(userArr[k])] = userArr[k];
+				}
+				break;
 		case 'raw':
 		case 'html':
 			break;
@@ -201,7 +316,6 @@ class Parser {
 
 	}
 	splitCommand(message) {
-		this.pmTarget = '';
 		this.cmd = '';
 		this.cmdToken = '';
 		this.target = '';
@@ -266,10 +380,23 @@ class Parser {
 		return commandHandler;
 	}
 	sendReply(data) {
-		if(this.pmTarget) return this.bot.send(`/pm ${this.pmTarget}, ${data}`, this.room);
-		return this.bot.send(data, this.room);
+		if(this.pmTarget) {
+			this.bot.send(`/pm ${this.pmTarget}, ${data}`, this.room);	
+		} else {
+			this.bot.send(data, this.room);			
+		}
+	}
+	can(permission) {
+		for (const owner of Config.owners) {
+			for (const nick of owner.aliases) {
+				if(toUserName(nick) === toUserName(this.user)) return true;
+			}
+		}
+		this.sendReply('Acceso Denegado');
+		return false;
 	}
     parse(room, user, message, pm) {
+		this.pmTarget = '';
 		this.bot.lastMessage = message;
 		this.bot.lastUser = user;
 		let commandHandler = this.splitCommand(message);
@@ -278,7 +405,7 @@ class Parser {
             this.user = user;
 			this.message = message;
 			this.room = room;
-			if(pm)this.pmTarget = user;
+			if(pm) this.pmTarget = user;
         	this.run(commandHandler);
 		}        
     }
@@ -309,6 +436,11 @@ function connect(server) {
 	if (server.disabled) return;
 	if (Servers[server.id]) return console.log('Already connected to ' + server.id + '. Connection aborted.', server.id);
 	Servers[server.id] = new Bot(server);
+	const Battle = require('./battle');
+	Battle.init();
+	Servers[server.id].on('line', (sv, room, message, isIntro, spl) => {
+		Battle.parse(sv, room, message, isIntro, spl);
+	});
 	//console.log('Connecting to ' + server.id);
 }
 exports.connect = connect;
@@ -323,7 +455,7 @@ function disconnect(server, reconnect) {
 	console.log("Disconnected from " + serverid + ".", serverid);
 	if (reconnect) connect(serverid);
 }
-exports.disconnect;
+exports.disconnect = disconnect;
 var count = 0;
 
 const connectTimer =setInterval(function () {

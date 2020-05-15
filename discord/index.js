@@ -121,13 +121,22 @@ class Plugins {
 		}        
     }
     sendReply(data) {
-        return this.channel.send(data);
+        this.channel.send(data);
     }
     linkifyReply(title, data, url) {
-        return this.sendReply(Embed.notify(title, data).setURL(url));
-    }
+        this.sendReply(Embed.notify(title, data).setURL(url));
+	}
+	can(permission) {
+		for (const owner of Config.owners) {
+			for (const nick of owner.aliases) {
+				if(toUserName(nick) === toUserName(this.user)) return true;
+			}
+		}
+		this.sendReply('Acceso Denegado');
+		return false;
+	}
     embedReply(title, data) {
-        return this.sendReply(Embed.notify(title, data));
+        this.sendReply(Embed.notify(title, data));
 	}
 	runHelp(help) {
 		let commandHandler = this.splitCommand(`.help ${help}`);
