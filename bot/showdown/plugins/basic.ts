@@ -4,12 +4,12 @@ export const commands = {
         let log = Tools.FS('./logs/errors.log').readSync().toString();
         Tools.Hastebin.upload(log, function (r, link) {
             let fullLink = 'https://' + link;
-            if(r) this.sendReply(`Logs de errores del servidor ${fullLink}`);
-            else this.sendReply('Lo sentimos, no fue posible encontrar los logs');
+            if (r) this.replyTrad('link', fullLink);
+            else this.replyTrad('error');
         }.bind(this));
     },
     about: function() {
         let packageData = Chat.packageData;
-        this.sendReply(`Soy ${Config.name} un bot multi-plataforma creado por ${packageData.author && packageData.author.name} para el servidor Space Showdown, puedes ver mi codigo en ${packageData.url}`);
+        this.replyTrad('msg', Config.name, (packageData.author && packageData.author.name), packageData.url);
     },
 };

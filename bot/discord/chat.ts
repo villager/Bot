@@ -9,6 +9,7 @@ export class Parser {
 	channel: any;
 	user: any;
 	message: string;
+	language: string;
     constructor(bot) {
 		this.bot = bot;
 	}
@@ -94,7 +95,20 @@ export class Parser {
     }
     sendReply(data) {
         this.channel.send(data);
-    }
+	}
+	langReply(msg, ...args) {
+		let i = 1;
+		let output = Languages.get(this.language, this.cmd)[msg];
+		for (const arg of args) {
+			output = output.replace(`$${i}`,arg);
+			i++;
+		}
+		return output;
+	}
+	replyTrad(msg, ...args) {
+		this.sendReply(this.langReply(msg, ...args));
+
+	}
     linkifyReply(title, data, url) {
         this.sendReply(Embed.notify(title, data).setURL(url));
 	}

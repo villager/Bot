@@ -91,3 +91,20 @@ export function	uncacheTree(root: string) {
 		toUncache = newuncache;
 	} while (toUncache.length > 0);
 }
+export function generateRandomNick (numChars:number) {
+	var chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+	var str = '';
+	for (var i = 0, l = chars.length; i < numChars; i++) {
+		str += chars.charAt(~~(Math.random() * l));
+	}
+	return str;
+}
+export function addLeftZero (num:any, nz:number) {
+	let str = num.toString();
+	while (str.length < nz) str = "0" + str;
+	return str;
+}
+export function getDateString () {
+	let date = new Date();
+	return (addLeftZero(date.getDate(), 2) + '/' + addLeftZero(date.getMonth() + 1, 2) + '/' + addLeftZero(date.getFullYear(), 4) + ' ' + addLeftZero(date.getHours(), 2) + ':' + addLeftZero(date.getMinutes(), 2) + ':' + addLeftZero(date.getSeconds(), 2));
+}

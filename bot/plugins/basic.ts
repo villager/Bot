@@ -42,13 +42,13 @@ export const commands = {
 		}
 	},
     version: function(target:any, room:any, user:any) {
-        return this.sendReply(`La version del Bot es ${Chat.packageData.version}`);
+		return this.replyTrad('msg', Chat.packageData.version);
     },
     say: function(target: any, user:any) {
         if(!target) return this.runHelp('say');
-        this.sendReply(target);
+		this.sendReply(target);
     },
-    sayhelp: ['.say [target] - Decir una oracion'],
+    sayhelp: [Languages.get(Config.language, 'say')['msg']],
 
     pick: function(target:any) {
         if (!target || !target.includes(',')) {
@@ -56,7 +56,7 @@ export const commands = {
         }
         const options = target.split(',');
         const pickedOption = options[Math.floor(Math.random() * options.length)].trim();
-        this.sendReply(`Opcion elegida: ${pickedOption}`);
+		this.replyTrad('choose', pickedOption);
     },
-    pickhelp: ['.pick [opc1, opc2, ..] - Elige una opcion entre las opciones'],
+    pickhelp: [Languages.get(Config.language, 'pick')['msg']],
 };

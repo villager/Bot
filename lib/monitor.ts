@@ -8,6 +8,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 const logPath = path.resolve(__dirname, '../logs/errors.log');
+const debugPath = path.resolve(__dirname, '../logs/debug.log');
 
 
 /**
@@ -30,5 +31,14 @@ export function log(error : Error | string , data : AnyObject  , server : string
 		Stream.end();
 	}).on('error', (err) => {
 		console.error(`\nSUBCRASH: ${err.stack}\n`);
+	});
+}
+export function debug(description: string) {
+	const Stream = fs.createWriteStream(logPath, {flags: 'a'});
+    Stream.on('open', () => {
+		Stream.write(`\n${description}\n`);
+		Stream.end();
+	}).on('error', (err) => {
+		console.error(`\nDEBUG CRASHED: ${err.stack}\n`);
 	});
 }

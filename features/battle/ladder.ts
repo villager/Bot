@@ -42,12 +42,12 @@ export function stop () {
 	if (!laddering) return false;
 	laddering = false;
 	if (ladderTimer) clearTimeout(exports.ladderTimer);
-	exports.ladderTimer = null;
+	ladderTimer = null;
 	return true;
 }
 
 export function destroy () {
-	exports.laddering = false;
+	laddering = false;
 	if (exports.ladderTimer) clearTimeout(exports.ladderTimer);
-	exports.ladderTimer = null;
+	ladderTimer = null;
 }

@@ -6,8 +6,14 @@ const EventEmitter = events.EventEmitter;
 import {DiscordClient} from './discord';
 import {PSBot} from './showdown';
 
+import * as Config from '../config/config';
+global.Config = Config;
+
+
 import * as Monitor from '../lib/monitor';
 global.Monitor = Monitor;
+
+
 
 import {Chat} from './chat';
 global.Chat = Chat;
@@ -19,13 +25,13 @@ global.toId = Tools.toId;
 global.splint = Tools.splint;
 global.toUserName = Tools.toUserName;
 
+import * as Languages from '../languages';
+global.Languages = Languages;
+Languages.loadLangs();
 
 import * as Features from '../features';
 global.Features = Features;
 Features.loadFeatures();
-
-import * as Config from '../config/config';
-global.Config = Config;
 
 class GlobalBot extends EventEmitter {
     servers: PSBot;
@@ -41,6 +47,7 @@ class GlobalBot extends EventEmitter {
         }
     }
     connect() {
+        Features.initData();
         for (let i in this.servers) {
             let Server = this.servers[i];
             Server.connect();
@@ -64,5 +71,5 @@ class GlobalBot extends EventEmitter {
         this.discord.connect();
     }
 }
-const Bot = new GlobalBot ();
+global.Bot = new GlobalBot ();
 Bot.connect();

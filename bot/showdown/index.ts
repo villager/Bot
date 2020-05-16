@@ -14,7 +14,7 @@ export class PSBot extends EventEmitter {
     port: number;
     rooms: object;
     name: string;
-    bot: AnyObject;
+    bot: any;
     connected: Boolean;
     baseRooms: any;
     id: string;
@@ -30,7 +30,8 @@ export class PSBot extends EventEmitter {
 	joinedRooms: Boolean;
 	named: Boolean;
 	pass: string;
-    parser: Parser;
+	parser: Parser;
+	language: string;
     constructor(opts) {
         super();
         this.id = opts.id;
@@ -49,7 +50,8 @@ export class PSBot extends EventEmitter {
         this.joinedRooms = false;
         this.roomcount = 0;
         this.challengekeyid = '';
-        this.challenge = '';
+		this.challenge = '';
+		this.language = opts.language;
         this.parser = new Parser(this);
         this.connection = new WebSocket(`ws://${this.ip}:${this.port}/showdown/websocket`);    
 
@@ -145,7 +147,6 @@ export class PSBot extends EventEmitter {
 			this.send('/cmd rooms');
 			let cmds = Features.initCmds(this);
 			for (const cmd of cmds) this.send(cmd);
-			console.log(cmds);
 			if (!this.joinedRooms && parts[3] === '1') {
 				if (Array.isArray(this.baseRooms)) {
                     for (const room of this.baseRooms) this.joinRoom(room);

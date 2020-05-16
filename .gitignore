@@ -1,6 +1,6 @@
 /logs/*
-/db
-!/db/*-example.json
+/features/**/data/*
+!/features/**/data/*-example*
 /config/*
 !/config/config-example.js
 /node_modules

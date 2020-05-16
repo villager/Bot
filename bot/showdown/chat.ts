@@ -8,17 +8,21 @@ export class Parser {
     room: string;
     user: string;
     pmTarget: string;
-    message: string;
+	message: string;
+	language: string;
+	serverid: string;
 	constructor(bot) {
         this.cmd = '';
         this.cmdToken = '';
         this.target = '';
         this.bot = bot;
-        this.fullCmd = '';
+		this.fullCmd = '';
         this.room = '';
         this.user = '';
         this.pmTarget = '';
-        this.message = '';
+		this.message = '';
+		this.serverid = bot.id;
+		this.language = bot.language ? bot.language : Config.language;
 	}
 	splitCommand(message) {
 		this.cmd = '';
@@ -91,6 +95,20 @@ export class Parser {
 			this.bot.send(data, this.room);			
 		}
 	}
+	langReply(msg, ...args) {
+		let i = 1;
+		console.log(this.language);
+		let output = Languages.get(this.language, this.cmd)[msg];
+		for (const arg of args) {
+			output = output.replace(`$${i}`,arg);
+			i++;
+		}
+		return output;
+	}
+	replyTrad(msg, ...args) {
+		this.sendReply(this.langReply(msg, ...args));
+
+	}
 	can(permission) {
 		for (const owner of Config.owners) {
 			for (const nick of owner.aliases) {
@@ -116,6 +134,10 @@ export class Parser {
     }
 	runHelp(help) {
 		let commandHandler = this.splitCommand(`.help ${help}`);
+		this.run(commandHandler);
+	}
+	runCmd(command) {
+		let commandHandler = this.splitCommand(`.${command}`);
 		this.run(commandHandler);
 	}
 	run(commandHandler) {

@@ -1,6 +1,6 @@
 import * as util from 'util';
 
-const TEAMS_DATA = './db/teams.json';
+const TEAMS_DATA = './features/battle/data/teams.json';
 export let teams = {};
 export let staticTeams = {};
 export let dynTeams = {};
@@ -26,13 +26,7 @@ export function addTeam (name:any, format:any, packed:any) {
 export function loadTeamList(reloading:Boolean) {
 	try {
 		//if (reloading) Tools.uncacheTree('../features/battle/teams.js');
-		staticTeams = require('./teams.js').teams;
-		Tools.FS(TEAMS_DATA).isFile().catch(() =>{
-			dynTeams = Object.create(null);
-			Tools.FS(TEAMS_DATA).writeSync(Tools.FS('./db/teams-example.json').readSync());
-		}).then(() =>{
-			dynTeams = JSON.parse(Tools.FS(TEAMS_DATA).readSync().toString());
-		})
+		dynTeams = JSON.parse(Tools.FS(TEAMS_DATA).readSync().toString());
 		mergeTeams();
 		return true;
 	} catch (e) {
