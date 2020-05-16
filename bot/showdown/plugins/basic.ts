@@ -7,7 +7,7 @@ export const commands = {
             if (r) this.replyTrad('link', fullLink);
             else this.replyTrad('error');
         }.bind(this));
-    },
+    },  
     about: function() {
         let packageData = Chat.packageData;
         this.replyTrad('msg', Config.name, (packageData.author && packageData.author.name), packageData.url);

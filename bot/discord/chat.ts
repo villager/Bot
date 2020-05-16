@@ -98,7 +98,7 @@ export class Parser {
 	}
 	langReply(msg, ...args) {
 		let i = 1;
-		let output = Languages.get(this.language, this.cmd)[msg];
+		let output = Features.get('languages').get(this.language, this.cmd)[msg];
 		for (const arg of args) {
 			output = output.replace(`$${i}`,arg);
 			i++;

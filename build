@@ -66,7 +66,7 @@ sucrase('./tools', './.tools-dist');
 //sucrase('./discord', './.discord-dist');
 sucrase('./bot', './.bot-dist');
 sucrase('./data', './.data-dist');
-sucrase('./languages', './.languages-dist');
+//sucrase('./languages', './.languages-dist');
 sucrase('./features', './.features-dist');
 
 
@@ -87,5 +87,5 @@ replace('.tools-dist', [
 	{regex: /(require\(.*?)(lib)/g, replace: `$1.lib-dist`},
 ]);
 replace('.bot-dist', [
-	{regex: /(require\(.*?)(lib|tools|features|languages)/g, replace: `$1.$2-dist`},
+	{regex: /(require\(.*?)(lib|tools|features)/g, replace: `$1.$2-dist`},
 ]);

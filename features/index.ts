@@ -24,7 +24,9 @@ export function initData() {
             feature.initData();
         }
         for (const folder of DATA_FOLDERS) {
+            if (feature.initData === false) continue;
             let fileList = Tools.FS(`./features/${feature.origin}/${folder}`).readdirSync();
+            
             let fileDict = Object.create(null);
             let exampleFiles = [];
             for (let fileName of fileList) {

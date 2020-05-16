@@ -48,7 +48,7 @@ export const commands = {
         if(!target) return this.runHelp('say');
 		this.sendReply(target);
     },
-    sayhelp: [Languages.get(Config.language, 'say')['msg']],
+    sayhelp: [Features.get('languages').get(Config.language, 'say')['msg']],
 
     pick: function(target:any) {
         if (!target || !target.includes(',')) {
@@ -58,5 +58,5 @@ export const commands = {
         const pickedOption = options[Math.floor(Math.random() * options.length)].trim();
 		this.replyTrad('choose', pickedOption);
     },
-    pickhelp: [Languages.get(Config.language, 'pick')['msg']],
+    pickhelp: [Features.get('languages').get(Config.language, 'pick')['msg']],
 };

@@ -25,10 +25,6 @@ global.toId = Tools.toId;
 global.splint = Tools.splint;
 global.toUserName = Tools.toUserName;
 
-import * as Languages from '../languages';
-global.Languages = Languages;
-Languages.loadLangs();
-
 import * as Features from '../features';
 global.Features = Features;
 Features.loadFeatures();
