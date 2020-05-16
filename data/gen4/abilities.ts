@@ -101,7 +101,7 @@ export const BattleAbilities: any = {
 	forewarn: {
 		inherit: true,
 		onStart(pokemon) {
-			let warnMoves: Move[] = [];
+			let warnMoves: any = [];
 			let warnBp = 1;
 			for (const target of pokemon.side.foe.active) {
 				if (target.fainted) continue;
@@ -302,7 +302,7 @@ export const BattleAbilities: any = {
 	simple: {
 		shortDesc: "This Pokemon's stat stages are considered doubled during stat calculations.",
 		onModifyBoost(boosts) {
-			let key: BoostName;
+			let key: any;
 			for (key in boosts) {
 				boosts[key]! *= 2;
 			}

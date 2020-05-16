@@ -11,8 +11,8 @@ export const BattleMovedex: any= {
 			if (target.volatiles['substitute']) {
 				return false;
 			}
-			const stats: BoostName[] = [];
-			let stat: BoostName;
+			const stats: any = [];
+			let stat: any;
 			for (stat in target.boosts) {
 				if (target.boosts[stat] < 6) {
 					stats.push(stat);
@@ -20,7 +20,7 @@ export const BattleMovedex: any= {
 			}
 			if (stats.length) {
 				const randomStat = this.sample(stats);
-				const boost: SparseBoostsTable = {};
+				const boost: any = {};
 				boost[randomStat] = 2;
 				this.boost(boost);
 			} else {
@@ -163,7 +163,7 @@ export const BattleMovedex: any= {
 						ignoreImmunity: true,
 						effectType: 'Move',
 						type: 'Normal',
-					} as unknown as ActiveMove;
+					} as unknown as any;
 					this.tryMoveHit(target, pokemon, moveData);
 					return false;
 				}
@@ -321,7 +321,7 @@ export const BattleMovedex: any= {
 				delete move.volatileStatus;
 				delete move.onHit;
 				move.self = {boosts: {atk: 1, def: 1, spe: -1}};
-				move.target = move.nonGhostTarget as MoveTarget;
+				move.target = move.nonGhostTarget as any;
 			} else if (target.volatiles['substitute']) {
 				delete move.volatileStatus;
 				delete move.onHit;
@@ -430,7 +430,7 @@ export const BattleMovedex: any= {
 				flags: {},
 				willCrit: false,
 				type: '???',
-			} as unknown as ActiveMove;
+			} as unknown as any;
 			const damage = this.getDamage(source, target, moveData, true);
 			Object.assign(target.side.slotConditions[target.position]['futuremove'], {
 				duration: 3,
@@ -689,7 +689,7 @@ export const BattleMovedex: any= {
 				flags: {},
 				willCrit: false,
 				type: '???',
-			} as unknown as ActiveMove;
+			} as unknown as any;
 			const damage = this.getDamage(source, target, moveData, true);
 			Object.assign(target.side.slotConditions[target.position]['futuremove'], {
 				duration: 3,

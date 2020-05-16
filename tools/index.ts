@@ -71,4 +71,23 @@ export function toName (text: any) {
 export function escapeHTML(str:any) {
 	if (!str) return '';
 	return ('' + str).escapeHTML();
-};
+}
+export function	uncacheTree(root: string) {
+	let toUncache = [require.resolve(root)];
+	do {
+		const newuncache: string[] = [];
+		for (const target of toUncache) {
+			if (require.cache[target]) {
+				// cachedModule
+				const children: {id: string}[] = require.cache[target]!.children;
+				newuncache.push(
+					...(children
+						.filter(cachedModule => !cachedModule.id.endsWith('.node'))
+						.map(cachedModule => cachedModule.id))
+				);
+				delete require.cache[target];
+			}
+		}
+		toUncache = newuncache;
+	} while (toUncache.length > 0);
+}

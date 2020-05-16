@@ -7,7 +7,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-const logPath = path.resolve(__dirname, '../logs/errors.txt');
+const logPath = path.resolve(__dirname, '../logs/errors.log');
 
 
 /**

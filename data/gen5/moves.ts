@@ -754,7 +754,7 @@ export const BattleMovedex: any= {
 	psychup: {
 		inherit: true,
 		onHit(target, source) {
-			let i: BoostName;
+			let i: any;
 			for (i in target.boosts) {
 				source.boosts[i] = target.boosts[i];
 			}

@@ -3,7 +3,7 @@
 var child_process = require('child_process');
 
 function run() {
-    child_process.execSync("node ./.global-dist/index.js", {stdio: 'inherit', cwd: __dirname});
+    child_process.execSync("node ./.bot-dist/index.js", {stdio: 'inherit', cwd: __dirname});
 }
 
 var built = false;

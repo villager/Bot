@@ -18,6 +18,16 @@ Config.YT_Key = '';
 /**
  * Pokemon Showdown Config
  */
+Config.initCmds = [];
+
+Config.maxBattles = 5;
+
+Config.battleModules = {
+	/* Algorithms for use in battles */
+	"challengecup1v1": "ingame-nostatus",
+	"1v1": "ingame-nostatus"
+};
+
 Config.servers = {
     "example1": {
         id: "example1",
@@ -25,6 +35,7 @@ Config.servers = {
         port: 8000,
         rooms: ["room1", "room2"],
         name: "nick1",
+        initCmds: ['/avatar evelyn'],
         password: "pass1",
 
     },
@@ -33,6 +44,7 @@ Config.servers = {
         ip: "0.0.0.0",
         port: 8000,
         rooms: ["room1", "room2"],
+        initCmds: ['/avatar evelyn'],
         name: "nick2",
         password: "pass2"
     }
