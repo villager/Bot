@@ -10,12 +10,11 @@ const TypeChart = TypeChartFile;
 const Pokemon = Calc.Pokemon;
 const Conditions = Calc.Conditions;
 
-
-export function setup (Data) {
+exports.setup = function (Data) {
 	const BattleModule:any = {};
 	BattleModule.id = "singles-eff";
 
-	function suposeActiveFoe(battle:any) {
+	function suposeActiveFoe(battle) {
 		let target = battle.foe.active[0];
 		let pokeB = new Pokemon(target.template, {
 			level: target.level,
@@ -102,7 +101,7 @@ export function setup (Data) {
 
 	/* Moves */
 
-	function foeCanSwitch(battle:any) {
+	function foeCanSwitch(battle) {
 		let totalPokes = battle.foe.teamPv.length || 6;
 		if (battle.foe.pokemon.length === totalPokes) {
 			for (let i = 0; i < battle.foe.pokemon.length; i++) {
@@ -115,7 +114,7 @@ export function setup (Data) {
 		return true;
 	}
 
-	function selfCanSwitch(battle:any) {
+	function selfCanSwitch(battle) {
 		for (let i = 0; i < battle.request.side.pokemon.length; i++) {
 			if (battle.request.side.pokemon[i].condition !== "0 fnt" && !battle.request.side.pokemon[i].active) {
 				return true;
@@ -124,7 +123,7 @@ export function setup (Data) {
 		return false;
 	}
 
-	function selfHasStatus(battle:any) {
+	function selfHasStatus(battle) {
 		for (let i = 0; i < battle.request.side.pokemon.length; i++) {
 			if (battle.parseStatus(battle.request.side.pokemon[i].condition).status in {"slp": 1, "brn": 1, "psn": 1, "tox": 1, "par": 1, "frz": 1}) {
 				return true;
@@ -133,7 +132,7 @@ export function setup (Data) {
 		return false;
 	}
 
-	function alreadyOppSleeping(battle:any) {
+	function alreadyOppSleeping(battle) {
 		for (let i = 0; i < battle.foe.pokemon.length; i++) {
 			if (battle.foe.pokemon[i].status === "slp") {
 				return true;
@@ -142,7 +141,7 @@ export function setup (Data) {
 		return false;
 	}
 
-	let getViableSupportMoves = BattleModule.getViableSupportMoves = function (battle:any, decisions:any) {
+	let getViableSupportMoves = BattleModule.getViableSupportMoves = function (battle, decisions) {
 		let res = {
 			viable: [],
 			unviable: [],
@@ -494,7 +493,7 @@ export function setup (Data) {
 			}
 			if (move.weather && battle.conditions.weather) {
 				let weather = toId(battle.conditions.weather);
-				if (weather && ((weather in {'desolateland': 1, 'primordialsea': 1, 'deltastream': 1}) || weather === toId(move.weather))) {
+				if (weather && ((weather in {'desolateland': 1, 'primordialsea': 1, 'deltastream': 1}) || weather === Text.toId(move.weather))) {
 					res.unviable.push(decisions[i]);
 				} else {
 					res.viable.push(decisions[i]);
@@ -518,7 +517,7 @@ export function setup (Data) {
 		return res;
 	};
 
-	let getViableDamageMoves = BattleModule.getViableDamageMoves = function (battle:any, decisions:any) {
+	let getViableDamageMoves = BattleModule.getViableDamageMoves = function (battle, decisions) {
 		let res = {
 			ohko: [], // +90% -> replace status moves
 			thko: [], // +50% -> No switch
@@ -605,7 +604,7 @@ export function setup (Data) {
 		return res;
 	};
 
-	function debugBestMove(battle:any, bestSw:any, damageMoves:any, supportMoves:any) {
+	function debugBestMove(battle, bestSw, damageMoves, supportMoves) {
 		battle.debug("Best switch: " + (bestSw ? bestSw[0].poke : "none"));
 		let tmp;
 		for (let i in damageMoves) {
@@ -628,12 +627,12 @@ export function setup (Data) {
 		}
 	}
 
-	let getBestMove = BattleModule.getBestMove = function (battle:any, decisions:any) {
+	let getBestMove = BattleModule.getBestMove = function (battle, decisions) {
 		let bestSW = BattleModule.getBestSwitch(battle, decisions);
 		let damageMoves = getViableDamageMoves(battle, decisions);
 		let supportMoves = getViableSupportMoves(battle, decisions);
 
-		let ev = evaluatePokemon(battle, 0, false);
+		let ev = evaluatePokemon(battle, 0);
 		let evNoMega = evaluatePokemon(battle, 0, true);
 
 		debugBestMove(battle, bestSW, damageMoves, supportMoves);
@@ -706,22 +705,23 @@ export function setup (Data) {
 
 	/* Switches */
 
-	let getBestSwitch = BattleModule.getBestSwitch = function (battle:any, decisions:any) {
+	let getBestSwitch = BattleModule.getBestSwitch = function (battle, decisions) {
 		let chosen = null;
 		let tmp, maxi = null;
-		for (let i = 0; i < decisions.length; i++) {
-			if (decisions[i][0].type === "switch") {
-				if (battle.foe.active[0] && !battle.foe.active[0].fainted && battle.self.pokemon[decisions[i][0].pokeId]) {
-					let pk = battle.self.pokemon[decisions[i][0].pokeId];
+		console.log(decisions);
+		for (const pokemon of decisions) {
+			if(decisions[0].type === 'switch') {
+				if(battle.foe.active[0] && !battle.foe.active[0].fainted  && battle.self.pokemon[decisions[i][0].pokeId]) {
+					let pk = battle.self.pokemon[pokemon.pokeId];
 					if (pk.helpers.hasNoViableMoves === battle.foe.active[0].name) continue;
 				}
-				tmp = evaluatePokemon(battle, decisions[i][0].pokeId);
-				if (maxi === null) {
+				tmp= evaluatePokemon(battle, pokemon.pokeId);
+				if(maxi === null) {
 					maxi = tmp;
-					chosen = decisions[i];
+					chosen = pokemon;
 				} else if (maxi.t > tmp.t || (maxi.t === tmp.t && maxi.d < tmp.d)) {
 					maxi = tmp;
-					chosen = decisions[i];
+					chosen = pokemon;
 				}
 			}
 		}
@@ -730,7 +730,7 @@ export function setup (Data) {
 
 	/* Swapper */
 
-	BattleModule.decide = function (battle:any, decisions:any) {
+	BattleModule.decide = function (battle, decisions) {
 		if (battle.gametype !== "singles") throw new Error("This module only works for singles gametype");
 		if (battle.request.forceSwitch) {
 			return getBestSwitch(battle, decisions);

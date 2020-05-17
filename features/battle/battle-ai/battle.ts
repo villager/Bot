@@ -160,7 +160,6 @@ export class Battle {
             cmds.push("/undo");
         }
         cmds.push(str + "|" + this.rqid);
-        console.log(cmds);
         this.send(cmds);
     }
 
@@ -247,7 +246,6 @@ export class Battle {
             this.lock = false;
             return;
         }
-        console.log('entre aqui');
         if (!decisions || !decisions.length) {
             this.debug("Nothing to do: " + this.id);
             this.lock = false;
@@ -332,7 +330,6 @@ export class Battle {
     }
 
     runMajor(args:any, kwargs:any, isIntro:any) {
-        console.log(args[0]);
         if (majors[args[0]]) {
             let major = majors[args[0]];
             let r = 0;

@@ -68,9 +68,15 @@ export function toName (text: any) {
 	return text.trim();
 }
 
-export function escapeHTML(str:any) {
+export function escapeHTML(str: string) {
 	if (!str) return '';
-	return ('' + str).escapeHTML();
+	return ('' + str)
+		.replace(/&/g, '&amp;')
+		.replace(/</g, '&lt;')
+		.replace(/>/g, '&gt;')
+		.replace(/"/g, '&quot;')
+		.replace(/'/g, '&apos;')
+		.replace(/\//g, '&#x2f;');
 }
 export function	uncacheTree(root: string) {
 	let toUncache = [require.resolve(root)];
