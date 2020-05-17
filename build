@@ -65,7 +65,7 @@ sucrase('./tools', './.tools-dist');
 //sucrase('./global', './.global-dist');
 //sucrase('./discord', './.discord-dist');
 sucrase('./bot', './.bot-dist');
-sucrase('./data', './.data-dist');
+//sucrase('./data', './.data-dist');
 //sucrase('./languages', './.languages-dist');
 sucrase('./features', './.features-dist');
 

@@ -1,6 +1,6 @@
 "use strict";
+import * as psData from 'ps-data';
 
-const DATA_DIR = '../../../.data-dist/'; // Si le pongo a remplazar se jode otros archivos
 
 export function getEffect (effect:any, gen?:number) {
     if (!effect || typeof effect === 'string') {
@@ -19,7 +19,7 @@ export function getEffect (effect:any, gen?:number) {
         let pMove = getMove(id, gen);
         let pAbility = getAbility(id, gen);
         let pItem:any = getItem(id, gen);
-        let statuses = require(`${DATA_DIR}statuses.js`).BattleStatuses;
+        let statuses = psData.getStatuses();
 
         if (id && statuses && statuses[id]) {
             effect = statuses[id];
@@ -58,7 +58,7 @@ export function getTemplate (poke:any, gen?:number) {
 	let temp;
 	for (var i = 8; i >= gen; i--) {
 		try {
-			temp = require(`${DATA_DIR}gen${i}/pokedex.js`).BattlePokedex[poke];
+            temp = psData.getDex(i)[poke];
 			if (!temp) continue;
 		} catch (e) {
 			continue;
@@ -93,7 +93,7 @@ export function getMove(move:any, gen?:any) {
     let temp;
     for (let i = 8; i >= gen; i--) {
         try {
-            temp = require(`${DATA_DIR}gen${i}/moves.js`).BattleMovedex[move];
+            temp = psData.getMoves(i)[move];
             if (!temp) continue;
         } catch (e) {
             continue;
@@ -133,7 +133,7 @@ export function getItem (item:any, gen?:number) {
     let temp;
     for (let i = 8; i >= gen; i--) {
         try {
-            temp = require(`${DATA_DIR}gen${i}/items.js`).BattleItems[item];
+            temp = psData.getItems(i)[item];
             if (!temp) continue;
         } catch (e) {
             continue;
@@ -166,7 +166,7 @@ export function getAbility(ab:any, gen?:number) {
     let temp;
     for (let i = 8; i >= gen; i--) {
         try {
-            temp = require(`${DATA_DIR}gen${i}/abilities.js`).BattleAbilities[ab];
+            temp = psData.getAbilities(i)[ab];
             if (!temp) continue;
         } catch (e) {
             continue;
@@ -454,10 +454,10 @@ export class Player {
         return alive;
     }
 }
-export function getFormatsData (gen?:any) {
+export function getFormatsData (gen?:number) {
     if (!gen || gen > 8 || gen < 1) gen = 8;
     try {
-        return require(`${DATA_DIR}gen${i}/formats-data.js`).BattleFormatsData;
+        return psData.getFormatsData(gen);
     } catch (e) {
         Monitor.log(e, 'Format Data Not Found', 'Globaal');
     }
