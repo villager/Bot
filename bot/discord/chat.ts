@@ -10,8 +10,10 @@ export class Parser {
 	user: any;
 	message: string;
 	language: string;
+	messageId: number;
     constructor(bot) {
 		this.bot = bot;
+		this.messageId = 0;
 	}
 	
     splitCommand(message) {
@@ -79,9 +81,11 @@ export class Parser {
 		return commandHandler;
     }
     parse(message) {
+	//	console.log(message); <-- Ver la estructura del mensaje
 		this.bot.lastMessage = message.content;
 		this.bot.lastUser = message.author;
 		this.channel = message.channel;
+		this.messageId = message.id;
 		let commandHandler = this.splitCommand(message.content);
 
 		if (typeof commandHandler === 'function') {

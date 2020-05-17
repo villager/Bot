@@ -9,7 +9,7 @@ export let tourData = {};
 
 import * as LeaderboardsPath from './leaderboards'; 
 export const Leaderboards = LeaderboardsPath;
-
+export const key = 'showdown';
 class Tournament {
     format: string;
     type: string;

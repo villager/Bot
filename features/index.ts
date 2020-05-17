@@ -52,13 +52,26 @@ export function initData() {
 export function forEach(callback: any, thisArg?:any) {
 	return Object.values(features).forEach(callback, thisArg);
 }
+const COMMANDS_MAP = new Map([
+    ['showdown', 'psCommands'],
+    ['discord', 'discordCommands'],
+    ['global', 'globalCommands'],
+]);
 export function init(server?: any) {
     forEach((feature) => {
         if(typeof feature.init === 'function') {
             feature.init(server);
         } 
-        if (feature.commands && typeof feature.commands === 'object') {
-            Object.assign(Chat.psCommands, feature.commands);
+        if(feature.key && !Array.isArray(feature.key)) {
+            if (feature.commands && typeof feature.commands === 'object') {
+                Object.assign(Chat[COMMANDS_MAP.get(feature.key)], feature.commands);
+            }            
+        } else if(feature.key) {
+            for (const key of feature.key) {
+                if(feature[COMMANDS_MAP.get(key)] && typeof feature[COMMANDS_MAP.get(key)] === 'object') {
+                    Object.assign(Chat[COMMANDS_MAP.get(key)], feature[COMMANDS_MAP.get(key)]);
+                } 
+            }
         }
     });
 }

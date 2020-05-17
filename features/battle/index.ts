@@ -11,6 +11,7 @@ export const LadderManager = LadderManagerPath;
 import * as TourManagerPath from './tournaments';
 export const TourManager = TourManagerPath;
 
+export const key = 'showdown'; 
 
 export function init (server?: any) {
 	BattleBot.init();
