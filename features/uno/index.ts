@@ -1,14 +1,33 @@
-import { isNumber } from "util";
-
 /**
  * Space Showdown 
  * Modulo del Bot encargado de hacer que juegue al juego del UNO 
  */
 export const key = 'showdown';
-export const initData = false; // Solucionar esto despues
 
+const AUTO_JOIN_PATH = './features/uno/data/autojoin.json';
+const ACTION_COOLDOWN = 1000 * 3;
 let games = Object.create(null);
+let autoJoin = Object.create(null);
 
+export function init() {
+    for (let i in games) {
+        delete games[i];
+    }
+    autoJoin = JSON.parse(Tools.FS(AUTO_JOIN_PATH).readSync().toString());
+
+}
+function bubbleSort(arr: any){
+    for(let i=1;i<arr.length;i++) {
+        for(let j=0;j<(arr.length-i);j++) {
+            if(arr[j].count>arr[j+1].count) {
+                let aux=arr[j+1];
+                arr[j+1]=arr[j];
+                arr[j]=aux;
+            }
+        }
+    }
+    return arr;
+}
 class UNO {
     server: any;
     room: string;
@@ -20,6 +39,8 @@ class UNO {
     winner: string | null;
     phase: string;
     top: string;
+    change: string;
+    action: any;
     constructor(server, room) {
         this.room = toId(room);
         this.cards = [];
@@ -29,6 +50,8 @@ class UNO {
         this.currentTurn = null;
         this.phase = 'signups'
         this.winner = null;
+        this.change = null;
+        this.action = null;
         games[toId(room)] = this;
     }
     send(data: string) {
@@ -47,7 +70,8 @@ class UNO {
         if(!this.players[toId(user)]) return false;
         delete this.players[toId(user)];
     }
-    bestColorByHand(hand:any) {
+ 
+    bestColorByHand(hand: any) {
         let originalColors = ['R', 'G', 'Y', 'B', 'W'];
         let colors = [];
         for (const color of originalColors) {
@@ -75,15 +99,11 @@ class UNO {
                 break;
             }
         }
-        let sortColor = colors.sort((a,b)=>a.count-b.count);
-        let returnColor = 'B';
-        for (const color of colors) {
-            if(sortColor[4] === color.count) returnColor = color.color;
+        colors = bubbleSort(colors)
+        let returnColor = colors[4].color;
+        if(colors[4].color === 'W') {
+            returnColor = colors[3].color;
         }
-        if(returnColor === 'W') {
-            returnColor = sortColor[3].color;
-        }
-        console.log(returnColor);
         return returnColor;
     }
     playValidate(hand:any) {
@@ -92,9 +112,16 @@ class UNO {
         for (const card of hand) {
             let cardColor = card.charAt(0);
             let cardValue = card.slice(1);
-            if(cardColor === topColor || (cardValue === topValue && topValue !== '+4')) {
-                return card;
+            if (topColor === 'W') {
+                if(this.change === cardColor) {
+                    return card;
+                }
+            } else {
+                if(cardColor === topColor || (cardValue === topValue)) {
+                    return card;
+                }              
             }
+
         }
         // Looking for the wilds
         for (const card of hand) {
@@ -108,8 +135,15 @@ class UNO {
         data = JSON.parse(data);
         this.top = data.top;
         let validateHand = this.playValidate(data.hand);
-        if(!validateHand) return this.send(`/uno pass`);
-        return this.send(`/uno play ${validateHand}`);
+        this.action = setTimeout(() => {
+            if(!validateHand) {
+                this.send(`/uno pass`);
+            } else {
+                this.send(`/uno play ${validateHand}`);
+            }
+            clearTimeout(this.action);
+        }, ACTION_COOLDOWN);
+        return this.action;
 
     }
     onWinner(user: string) {
@@ -118,9 +152,18 @@ class UNO {
     selfTurn(data:any) {
         data = JSON.parse(data);
         this.top = data.top;
+        this.change = data.change;
         let validateHand = this.playValidate(data.hand);
-        if(!validateHand) return this.send('/uno draw');
-        return this.send(`/uno play ${validateHand}`);
+        this.action = setTimeout(() => {
+            if(!validateHand) {
+                this.send('/uno draw');
+            } else {
+                this.send(`/uno play ${validateHand}`);
+            }
+            clearTimeout(this.action);
+        }, ACTION_COOLDOWN);
+
+        return this.action;
     }
     onTurn(data:any) {
         this.currentTurn = data;
@@ -138,9 +181,7 @@ function checkIsActive(server, room) {
     }
 }
 export function parse(server:any, room:string, message:any, isIntro:Boolean, spl:any) {
-    if(spl[0] !== 'uhtml' && spl[0] !== 'uhtmlchange') console.log(message);
-    if(spl[0] === 'queryresponse' && spl[1] === 'uno') {
-        let game = games[room];
+    if(spl[0] === 'queryresponse' && spl[1] === 'uno' && autoJoin[room]) {
         switch(spl[2]) {
             case 'signups': 
                 checkIsActive(server, room).join();                
@@ -159,7 +200,6 @@ export function parse(server:any, room:string, message:any, isIntro:Boolean, spl
                 checkIsActive(server, room).onTurn(spl[3]);
             break;
             case 'self-turn':
-                console.log(spl[3]);
                 checkIsActive(server, room).selfTurn(spl[3]);
             break;
             case 'draw':
@@ -180,5 +220,20 @@ export const commands = {
     uno: function(target, room) {
         if(!target) target = '';
         this.sendReply(`/uno new ${target}`);
-    }
+    },
+    joinunos: function(target, room) {
+        if(!target) target = 'on';
+        if(target == 'on') {
+            if(autoJoin[room]) return this.sendReply('Ya estaba inscrito para los juegos de UNO');
+            autoJoin[room] = 1        
+            this.sendReply('A partir de ahora me unire a todos los juegos de UNO de la sala');
+        } else if(target == 'off') {
+            if(!autoJoin[room]) return this.sendReply('No estaba inscrito para los juegos de esta sala');
+            delete autoJoin[room];
+            this.sendReply('A partir de ahora ya no unire a los juegos de UNO de la sala');
+        } else {
+            return this.sendReply('No es una opcion valida (on/off)');
+        }
+        Tools.FS(AUTO_JOIN_PATH).writeUpdate(() => JSON.stringify(autoJoin));
+    },
 };
