@@ -1,3 +1,5 @@
+import { isNumber } from "util";
+
 /**
  * Space Showdown 
  * Modulo del Bot encargado de hacer que juegue al juego del UNO 
@@ -17,6 +19,7 @@ class UNO {
     currentTurn: string | null;
     winner: string | null;
     phase: string;
+    top: string;
     constructor(server, room) {
         this.room = toId(room);
         this.cards = [];
@@ -44,43 +47,128 @@ class UNO {
         if(!this.players[toId(user)]) return false;
         delete this.players[toId(user)];
     }
-    onWinner(user: string) {}
-    selfTurn(data:any) {}
-    onTurn(data:any) {}
+    bestColorByHand(hand:any) {
+        let originalColors = ['R', 'G', 'Y', 'B', 'W'];
+        let colors = [];
+        for (const color of originalColors) {
+            colors.push({
+                color: color,
+                count: 0,
+            });
+        }
+        for (const card of hand) {
+            switch(card.charAt(0)) {
+                case 'R':
+                    colors[0].count++;
+                break;
+                case 'G':
+                    colors[1].count++;
+                break;
+                case 'Y':
+                    colors[2].count++
+                break;
+                case 'B':
+                    colors[3].count++;
+                break;
+                case 'W':
+                    colors[4].count++;
+                break;
+            }
+        }
+        let sortColor = colors.sort((a,b)=>a.count-b.count);
+        let returnColor = 'B';
+        for (const color of colors) {
+            if(sortColor[4] === color.count) returnColor = color.color;
+        }
+        if(returnColor === 'W') {
+            returnColor = sortColor[3].color;
+        }
+        console.log(returnColor);
+        return returnColor;
+    }
+    playValidate(hand:any) {
+        let topValue = this.top.slice(1);
+        let topColor = this.top.charAt(0);
+        for (const card of hand) {
+            let cardColor = card.charAt(0);
+            let cardValue = card.slice(1);
+            if(cardColor === topColor || (cardValue === topValue && topValue !== '+4')) {
+                return card;
+            }
+        }
+        // Looking for the wilds
+        for (const card of hand) {
+            if(card.charAt(0) === 'W') {
+                return `${card} ${this.bestColorByHand(hand)}`;
+            }
+        }
+        return false;
+    }
+    onDraw(data:any) {
+        data = JSON.parse(data);
+        this.top = data.top;
+        let validateHand = this.playValidate(data.hand);
+        if(!validateHand) return this.send(`/uno pass`);
+        return this.send(`/uno play ${validateHand}`);
+
+    }
+    onWinner(user: string) {
+        delete games[this.room];
+    }
+    selfTurn(data:any) {
+        data = JSON.parse(data);
+        this.top = data.top;
+        let validateHand = this.playValidate(data.hand);
+        if(!validateHand) return this.send('/uno draw');
+        return this.send(`/uno play ${validateHand}`);
+    }
+    onTurn(data:any) {
+        this.currentTurn = data;
+    }
 }
 export function getGame(room: string) {
     if(!games[room]) return false;
     return games[room];
 }
+function checkIsActive(server, room) {
+    if(games[room]) return games[room];
+    else {
+        games[room] = new UNO(server, room);
+        return games[room];
+    }
+}
 export function parse(server:any, room:string, message:any, isIntro:Boolean, spl:any) {
+    if(spl[0] !== 'uhtml' && spl[0] !== 'uhtmlchange') console.log(message);
     if(spl[0] === 'queryresponse' && spl[1] === 'uno') {
-        if(server.id === 'moonlight') console.log(spl);
+        let game = games[room];
         switch(spl[2]) {
             case 'signups': 
-                games[room] = new UNO(server, room);
-                games[room].join();                
+                checkIsActive(server, room).join();                
             break;
             case 'joined': 
-                games[room].joinUser(spl[3]);
+                checkIsActive(server, room).joinUser(spl[3]);
             break;
             case 'dq':
             case 'leave':
-                games[room].leaveUser(spl[3]);
+                checkIsActive(server, room).leaveUser(spl[3]);
             break;
             case 'start':
-                games[room].phase = 'playing';
+                checkIsActive(server, room).phase = 'playing';
             break;
             case 'turn': 
-                games[room].onTurn(spl[3]);
+                checkIsActive(server, room).onTurn(spl[3]);
             break;
             case 'self-turn':
-                games[room].selfTurn(spl[3]);
+                console.log(spl[3]);
+                checkIsActive(server, room).selfTurn(spl[3]);
             break;
+            case 'draw':
+                checkIsActive(server, room).onDraw(spl[3]);
             case 'winner':
-                games[room].onWinner(spl[3]);
+                checkIsActive(server, room).onWinner(spl[3]);
             break;
             case 'action':
-                games[room].onAction(spl[3]);
+                checkIsActive(server, room).onAction(spl[3]);
                 break;
             case 'end':
                 delete games[room];

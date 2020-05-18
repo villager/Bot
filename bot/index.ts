@@ -58,7 +58,7 @@ class GlobalBot extends EventEmitter {
                 if (!Server.autoreconnect) return;
                 console.log('Reconnecting to ' + i + ' in one minute.');
                 let reconnect = setTimeout(() => {
-                    this.servers[i] = new PSBot(Config.server[i]);
+                    this.servers[i] = new PSBot(Config.servers[i]);
                     this.servers[i].connect();
                     clearInterval(reconnect);
                 }, 60 * 1000);

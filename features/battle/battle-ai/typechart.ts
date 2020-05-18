@@ -6,7 +6,7 @@ export function getMultipleEff (typeA: any, typeB:any, gen:any, notInmmune:any) 
 	let mux = 1;
 	let tmp;
 	for (let i = 0; i < typeB.length; i++) {
-		tmp = exports.getEffectiveness(typeA, typeB[i], gen);
+		tmp = getEffectiveness(typeA, typeB[i], gen);
 		if (tmp === 0 && notInmmune) tmp = 1;
 		mux *= tmp;
 	}
@@ -15,8 +15,8 @@ export function getMultipleEff (typeA: any, typeB:any, gen:any, notInmmune:any) 
 
 export function getEffectiveness (typeA: any, typeB: any , gen:any) {
 	if (!gen) gen = 8;
-	let chart = exports.gen8;
-	if (exports["gen" + gen]) chart = exports["gen" + gen];
+	let chart:any = gen8;
+	if (["gen" + gen]) chart = ["gen" + gen];
 	if (!chart[typeB] || !chart[typeB][typeA]) return 1;
 	switch (chart[typeB][typeA]) {
 	case 1:
