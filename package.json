@@ -12,11 +12,9 @@
         "email": "aldairbeltran3@hotmail.com"
     },
     "dependencies": {
-        "ps-data": "git://github.com/spaceshowdown/ps-data.git",
-        "@types/node": "^14.0.1",
-        "sucrase": "^3.14.0",
         "discord.js": "^12.2.0",
         "node-static": "^0.7.11",
+        "ps-data": "git://github.com/spaceshowdown/ps-data.git",
         "request": "^2.88.2",
         "ws": "^7.3.0"
     },
