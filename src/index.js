@@ -3,7 +3,7 @@ const EventEmitter = require('events').EventEmitter;
 const DiscordClient = require('./discord');
 const PSBot = require('./showdown');
 
-global.Config = require('../config/config');
+global.Config = require('./config/config');
 
 global.Monitor = require('./lib/monitor');
 
