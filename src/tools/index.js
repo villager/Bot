@@ -63,7 +63,7 @@ Tools.splint = function (target, separator, length) {
 
 Tools.FS = require('../lib/fs').FS;
 Tools.Hastebin = require('./hastebin');
-
+Tools.HTML = require('./html');
 Tools.toName = function (text) {
 	if (!text) return '';
 	return text.trim();

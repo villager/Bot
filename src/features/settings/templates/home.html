@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<head>
+    <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+    <style>
+*{
+	margin: 0;
+	padding: 0;
+	-webkit-box-sizing: border-box;
+	-moz-box-sizing: border-box;
+	box-sizing: border-box;
+}
+
+body{
+	background: #D4D4D4;
+	font-family: 'Open sans';
+}
+
+.wrap{
+	width: 800px;
+	max-width: 90%;
+	margin: 30px auto;
+}
+ul.tabs2 {
+	width: 100%;
+	background: #363636;
+	list-style: none;
+	display: flex;
+}
+ul.tabs{
+	width: 100%;
+	background: #363636;
+	list-style: none;
+	display: flex;
+}
+
+ul.tabs2 li {
+	width: 18%;
+}
+ul.tabs li{
+	width: 18%;
+}
+ul.tabs2 li a {
+	color:#FFF;
+	text-decoration: none;
+	font-size: 16px;
+	text-align: center;
+	display: block;
+	padding: 20px 0px;
+}
+ul.tabs li a{
+	color: #fff;
+	text-decoration: none;
+	font-size: 16px;
+	text-align: center;
+
+	display: block;
+	padding: 20px 0px;
+}
+
+.active{
+	background: #0984CC;
+}
+ul.tabs2 li a .tab-text {
+	margin-left: 8px;
+}
+ul.tabs li a .tab-text{
+	margin-left: 8px;
+}
+.secciones2 {
+	width: 100%;
+	background: #FFF;
+}
+.secciones{
+	width: 100%;
+	background: #fff;
+}
+.secciones2 article {
+	padding: : 30px;
+}
+.secciones article{
+	padding: 30px;
+}
+.secciones2 article p {
+	text-align: justify;
+}
+.secciones article p{
+	text-align: justify;
+}
+
+
+@media screen and (max-width: 700px){
+	ul.tabs2 li {
+		width: none;
+		flex-basis: 0;
+		flex-grow: 1;
+	}
+	ul.tabs li{
+		width: none;
+		flex-basis: 0;
+		flex-grow: 1;
+	}
+}
+
+@media screen and (max-width: 450px){
+	ul.tabs2 li a {
+		padding: 15px 0px;
+	}
+	ul.tabs li a{
+		padding: 15px 0px;
+	}
+	ul.tabs2 li a .tab-text {
+		display: none;
+	}
+	ul.tabs li a .tab-text{
+		display: none;
+	}
+	.secciones2 article {
+		padding: 20px;
+	}
+	.secciones article{
+		padding: 20px;
+	}
+}   
+    </style>
+	<script>
+	$(document).ready(function(){
+		$('ul.tabs li a:first').addClass('active');
+		$('.secciones article').hide();
+		$('.secciones article:first').show();
+		$('ul.tabs li a').click(function(){
+			$('ul.tabs li a').removeClass('active');
+			$(this).addClass('active');
+			$('.secciones article').hide();
+			var activeTab = $(this).attr("href"); 
+			$(activeTab).show();
+			return false;
+		});
+		$('ul.tabs li a ul.tabs2 li a:first').addClass('active');
+		$('ul.tabs li a .secciones2 article').hide();
+		$('ul.tabs li a .secciones2 article:first').show();
+		
+		$('ul.tabs li a ul.tabs2 li a').click(function(){
+			$('ul.tabs li a ul.tabs2 li a').removeClass('active');
+			$(this).addClass('active');
+			$('ul.tabs li a .secciones2 article').hide();
+			var activeTab = $(this).attr("href"); 
+			$(activeTab).show();
+			return false;
+		});
+		$('ul.tabs li a ul.tabs2 li a ul.tabs2 li').click(function(){
+			$('ul.tabs li a ul.tabs2 li a').removeClass('active');
+			$(this).addClass('active');
+			$('ul.tabs li a .secciones2 article').hide();
+			var activeTab = $(this).attr("href"); 
+			$(activeTab).show();
+			return false;
+		});
+		$('ul.tabs li a ul.tabs li').click(function(){
+			$('ul.tabs li a').removeClass('active');
+			$(this).addClass('active');
+			$('.secciones article').hide();
+			var activeTab = $(this).attr("href"); 
+			$(activeTab).show();
+			return false;
+		});
+	});
+    </script>
+    <title>Inicio</title>
+</head>
+<body>
+    <div class="wrap">
+        <ul class ="tabs">
+            ${TAB_SECTIONS}
+        </ul>
+        <div class="secciones">
+            ${CONTENT_SECTIONS}
+        </div>
+    </div>
+</body>

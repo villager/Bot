@@ -12,7 +12,6 @@ class Parser {
         this.pmTarget = '';
 		this.message = '';
 		this.serverid = bot.id;
-		this.language = bot.language ? bot.language : Config.language;
 	}
 	splitCommand(message) {
 		this.cmd = '';
@@ -87,8 +86,10 @@ class Parser {
 	}
 	langReply(msg, ...args) {
 		let i = 1;
-		console.log(this.language);
-		let output = Features.get('languages').get(this.language, this.cmd)[msg];
+		let settingsLang = Features('settings').get(this.bot.id).language;
+		let language = this.bot.language;
+		if(settingsLang) language = settingsLang; // Settings is the king
+		let output = Features.get('languages').get(language, this.cmd)[msg];
 		for (const arg of args) {
 			output = output.replace(`$${i}`,arg);
 			i++;

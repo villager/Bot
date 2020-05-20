@@ -15,15 +15,15 @@ global.toUserName = Tools.toUserName;
 global.Chat = require('./chat');
 
 global.Features = require('./features');
-
 Features.loadFeatures();
+Features.eventEmitter.setMaxListeners(Object.keys(Features.features).length);
 
 let bots = Object.create(null);
-
+global.Discord = null
 class GBot extends EventEmitter {
     constructor() {
         super();
-        this.discord = new DiscordClient();
+        this.discord = Discord = new DiscordClient();
         this.servers = Object.create(null);
         for (let i in Config.servers) {
             let Server = Config.servers[i];
@@ -58,3 +58,13 @@ class GBot extends EventEmitter {
 }
 const GlobalBot = global.GlobalBot = new GBot ();
 GlobalBot.connect();
+
+function getBot(bot) {
+    if(!bots[bot]) return false;
+    return bots[bot];
+}
+global.Bot = getBot;
+
+Bot.forEach = function(callback, thisArg) {
+    Object.values(bots).forEach(callback, thisArg);
+};

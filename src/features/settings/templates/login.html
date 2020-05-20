@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<head>
+    <title>Login de Configuraciones</title>
+    <script>
+        console.log(document.getElementById('user'));
+        document.getElementById('user').value = null;
+    </script>
+</head>
+<body>
+    <form action="" method="post" name="formlogin" target="_self" id="formlogin">
+        <label>
+            <br /><strong>Usuario: &emsp;</strong>
+                <input name="user" type="text" id="user" required placeholder="Type your user name here" />
+        </label>
+            <br /><br />
+        <label><strong>Password: &emsp;</strong>  
+            <input name="password" type="password" id="password" required placeholder="Type your password here" />
+        </label>
+            <br /><br />
+        <label>
+            <input type="submit" name="login" value="home" />
+        </label>
+    </form>
+</body>

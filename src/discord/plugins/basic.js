@@ -1,12 +1,12 @@
 exports.commands = {
 	errorlog() {
 		if(!this.can('hotpatch')) return false;
-		let log = Tools.FS('./logs/errors.log').readSync().toString();
-		Tools.Hastebin.upload(log, function (r, link) {
+		let log = Tools.FS('../logs/errors.log').readSync().toString();
+		Tools.Hastebin.upload(log, (r, link) =>{
 			let fullLink = 'https://' + link;
 			if(r) this.linkifyReply('Errores', 'Log de errores global del Bot', fullLink);
 			else this.sendReply('Lo sentimos, no fue posible encontrar los logs');
-		}.bind(this));
+		});
 	},
     about() {
         let packageData = Chat.packageData;

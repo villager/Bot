@@ -1,10 +1,19 @@
 "use strict";
 
 let languages = exports.languages = Object.create(null);
-const LANG_ALIASES = new Map([
+class JSONMap extends Map {
+    constructor(options) {
+        super(options)
+    }
+	toJSON() {
+		return Array.from(this);
+	}    
+}
+const LANG_ALIASES = new JSONMap([
     ['en', 'english'],
     ['es', 'spanish']
 ])
+exports.LANG_ALIASES = LANG_ALIASES;
 exports.initData = false;
 exports.init = function() {
     let languagesDir = Tools.FS('./features/languages').readdirSync();

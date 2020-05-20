@@ -8,7 +8,7 @@ function getFeature(feature) {
     return features[feature];
 }
 let Features = module.exports = getFeature;
-
+Features.features = features;
 Features.loadFeatures = function() {
     let featureList = Tools.FS('./features/').readdirSync();
     for (const featureDir of featureList) {
@@ -28,28 +28,27 @@ Features.initData = function() {
             feature.initData();
         }
         for (const folder of DATA_FOLDERS) {
-            if (feature.initData === false) continue;
-            let fileList = Tools.FS(`./features/${feature.origin}/${folder}`).readdirSync();
-            
-            let fileDict = Object.create(null);
-            let exampleFiles = [];
-            for (let fileName of fileList) {
-                let ext = path.extname(fileName);
-                if (ext !== '.json' && ext !== '.js' && ext !== '.txt' && ext !== '.tsv' && ext !== '.csv' && ext !== '.pem') continue;
-                let name = fileName.slice(0, -ext.length);
-                if (!fileDict[name]) fileDict[name] = Object.create(null);
-                fileDict[name][ext] = 1;
-                if (name.slice(-8) === '-example') exampleFiles.push({name: name.slice(0, -8), ext: ext});
-            }
-            for (let fileData of exampleFiles) {
-                let baseFileName = `../src/features/${feature.origin}/${folder}/${fileData.name}`;
-                let originFileName = `../src/features/${feature.origin}/${folder}/${fileData.name}`;
-                Tools.FS(`${baseFileName}${fileData.ext}`).isFile().catch(() =>{
-                    console.log(`Creando archivo ${baseFileName}`);
-                    Tools.FS(`${baseFileName}${fileData.ext}`).writeSync(Tools.FS(`${originFileName}-example${fileData.ext}`).readSync());
-
-                })
-            }
+            Tools.FS(`./features/${feature.origin}/${folder}`).readdir().then(files => {
+                let fileDict = Object.create(null);
+                let exampleFiles = [];
+                for (let fileName of files) {
+                    let ext = path.extname(fileName);
+                    if (ext !== '.json' && ext !== '.js' && ext !== '.txt' && ext !== '.tsv' && ext !== '.csv' && ext !== '.pem') continue;
+                    let name = fileName.slice(0, -ext.length);
+                    if (!fileDict[name]) fileDict[name] = Object.create(null);
+                    fileDict[name][ext] = 1;
+                    if (name.slice(-8) === '-example') exampleFiles.push({name: name.slice(0, -8), ext: ext});
+                }
+                for (let fileData of exampleFiles) {
+                    let baseFileName = `../src/features/${feature.origin}/${folder}/${fileData.name}`;
+                    let originFileName = `../src/features/${feature.origin}/${folder}/${fileData.name}`;
+                    Tools.FS(`${baseFileName}${fileData.ext}`).isFile().catch(() =>{
+                        console.log(`Creando archivo ${baseFileName}`);
+                        Tools.FS(`${baseFileName}${fileData.ext}`).writeSync(Tools.FS(`${originFileName}-example${fileData.ext}`).readSync());
+    
+                    })
+                }
+            }).catch(() => {});
         }
     });
 }
@@ -86,6 +85,9 @@ Features.parse = function(server, room, message, isIntro, spl) {
         }
     });
 }
+const events = require('./events');
+Features.eventEmitter =  new events.EventEmitter();
+
 Features.initCmds = function(server) {
     let cmds = [];
     /**

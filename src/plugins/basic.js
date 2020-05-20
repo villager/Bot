@@ -48,8 +48,10 @@ exports.commands = {
         if(!target) return this.runHelp('say');
 		this.sendReply(target);
     },
-    sayhelp: [Features.get('languages').get(Config.language, 'say')['msg']],
-
+    sayhelp: [Features('languages').get(Config.language, 'say')['msg']],
+	eval: function(target) {
+		this.sendReply(eval(target));
+	},
     pick: function(target) {
         if (!target || !target.includes(',')) {
             return this.runHelp('pick');
@@ -58,5 +60,5 @@ exports.commands = {
         const pickedOption = options[Math.floor(Math.random() * options.length)].trim();
 		this.replyTrad('choose', pickedOption);
     },
-    pickhelp: [Features.get('languages').get(Config.language, 'pick')['msg']],
+    pickhelp: [Features('languages').get(Config.language, 'pick')['msg']],
 };

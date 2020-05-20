@@ -4,6 +4,7 @@ class Parser {
     constructor(bot) {
 		this.bot = bot;
 		this.messageId = 0;
+		this.language = 'es';
 	}
     splitCommand(message) {
 		this.cmd = '';
