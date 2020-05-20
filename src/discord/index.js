@@ -8,6 +8,7 @@ class DiscordClient extends BaseClient {
 		this.plugins = new Parser(this);
 		this.lastUser = '';
         this.lastMessage = '';
+        this.language = 'es';
         this.name = Config.name;
     }
 

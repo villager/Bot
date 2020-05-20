@@ -1,7 +1,7 @@
 "use strict";
 let users = Object.create(null);
 let settings = Object.create(null);
-
+exports.settings = settings;
 const http = require('http');
 const util = require('util');
 const crypto = require('crypto');
@@ -17,7 +17,7 @@ Config.settingsLogin = {
 };
 let qs = require('querystring');
 Config.bindaddress = '0.0.0.0';
-
+const saveSettings = exports.save = () => Tools.FS(SETTINGS_JSON_PATH).writeUpdate(() => JSON.stringify(settings));
 function parseCookies (request) {
 	var list = {}, rc = request.headers.cookie;
 	if (rc) rc.split(';').forEach(function (cookie) {
@@ -30,7 +30,22 @@ function deleteCookies(request) {
     rc = request.headers.cookie;
     if(rc) console.log(rc);
 }
-
+function updateSettings(id, data) {
+    id = toId(id);
+    if(!settings[id]) settings[id] = {};
+    Object.assign(settings[id], data)
+    saveSettings();
+}
+exports.update = updateSettings;
+function generateValidation() {
+    let buf = '';
+    Features.forEach(feature => {
+        if(typeof feature.settingsValidation === 'function') {
+            buf += feature.settingsValidation();
+        }
+    });
+    return buf;
+}
 function encrypt(text){
     let cipher = crypto.createCipheriv('aes-256-cbc', Buffer.from('passwordpasswordpasswordpassword'), Buffer.from('vectorvector1234'))
     let crypted = cipher.update(text, 'utf8', 'hex');
@@ -43,49 +58,16 @@ function decrypt(text){
     dec += decipher.final('utf8');
     return dec;
 }
-function generateLi(name, id) {
-    if(!id) id = toId(name);
-    return `<li><a href="#${id}"><span>${name}</span></a></li>`;
-}
-function generateArticle(id,isSecond, out) {
+function generateArticle(id, out) {
     id = toId(id);
-    let output = `<div class="${isSecond ? 'secciones' : 'secciones2'}"><article id="${id}">`;
-    output += `<form action="" ${isSecond ? 'method="post"' : ''} name="form${id}" target="_self" id="form${id}">`;
+    let output = `<div class="secciones"><article id="${id}">`;
+    output += `<form action="" method="post" name="form${id}" target="_self" id="form${id}">`;
     output += out;
     output += `</form>`;
     output += '</article></div>';
     return output;
 }
-function generateChild(id) {
-    let output = '';
-    Features.forEach(feature => {
-        output += feature.addSetings(); 
 
-    });
-    return generateArticle();
-}
-function generateTextInput(name, value) {
-    return `<input name="${name}" type="text" id="${toId(name)}" ${value ? `value="${value}"` : ""}/>`;
-}
-function generateSumbit(value) {
-    return `<input type="submit" name="update" value="${value}" />`;
-}
-function generateSelect(id, selected, ...values) {
-    if(Array.isArray(values)) values = values[0];
-    let output = `<select id="${id}">`;
-    values.map(value => {
-        output += `<option ${selected === value ? 'selected="selected"' : ''} value="${value}">${value}</option>`;
-
-    })
-    output += '</select>';
-    return output;
-}
-function generateLangSelect(name, def ) {
-    let langs = [];
-    let languages = Features('languages').LANG_ALIASES.toJSON();
-    for (const lang of languages) langs.push(lang[0]);
-    return generateSelect(name, def, langs);
-}
 class Settings {
     constructor() {
         this.settings = {};
@@ -120,7 +102,6 @@ class Settings {
 			});
 			request.on('end', () => {
                 let post = qs.parse(body);
-                console.log(post);
                 if (post.update) {
                     this.updateServer(post);
                     this.finishResponse(request, response, acs, post);
@@ -148,34 +129,8 @@ class Settings {
 		this.finishResponse(request, response, secToken);
     }
     updateServer(post) {
-        switch(post.update) {
-            case 'discord':
-                if(post.language) {
-                    Discord.plugins.language = post.language; 
-                    settings['discord'] = {language: post.language};
-                    Tools.FS(SETTINGS_JSON_PATH).writeUpdate(() => JSON.stringify(settings));
-                } 
-                break;
-            case 'global':
-                if(post.language) {
-                    Config.language = post.language;
-                    settings['global'] = {language: post.language};
-                    Tools.FS(SETTINGS_JSON_PATH).writeUpdate(() => JSON.stringify(settings));
-                }
-                break;
-            default: {
-                Bot.forEach(bot => {
-                    if(bot.id == post.update) {
-                        if(post.language) {
-                            bot.language = post.language;
-                            bot.parser.language = post.language;
-                            settings[bot.id] = [post] 
-                            Tools.FS(SETTINGS_JSON_PATH).writeUpdate(() => JSON.stringify(settings));
-                        }
-                    }
-                });
-            }
-        }
+        Features.eventEmitter.emit('onUpdate', post, settings).flush();
+        saveSettings();
     }
     onResponse(response, output, setToken) {
 		let HTML_HEAD = {'Content-Type': 'text/html; charset=utf-8'};
@@ -202,27 +157,39 @@ class Settings {
         Bot.forEach(bot => {
             let inout = ''
             inout += `Nombre del Bot ${bot.name}<br />`;
-            inout += `Lenguaje: ${generateLangSelect('language', bot.language)}<br/>`;
+            Features.forEach(feature => {
+                if(typeof feature.settingsMenu === 'function') {
+                    let fun = feature.settingsMenu(bot);
+                    if(fun !== undefined) inout += `<br />${feature.settingsMenu(bot)}`;
+                }
+            });
+            inout += '<br />';
             inout += Tools.HTML.sumbitBtn(bot.id);
-            let subMenu = '';
-            let args = [{name: 'General'}, {name: "UNO"}];
-            subMenu += Tools.HTML.createUL(args, true);
-            for (const submenu of args) {
-                subMenu += generateArticle(submenu.name, true, 'TEST');
-            }
-            inout += subMenu; 
-            output += generateArticle(bot.id, false, inout);
+            output += generateArticle(bot.id, inout);
         });
         if(Discord) {
             let inout = `Nombre del Bot ${Discord.name}<br />`;
-            inout += `Lenguaje: ${generateLangSelect('language', Discord.plugins.language)}<br/>`;
+            Features.forEach(feature => {
+                if(typeof feature.settingsMenu === 'function') {
+                    let fun = feature.settingsMenu('discord');
+                    if(fun !== undefined) inout += `<br />${fun}`;
+                }
+            });
+            inout += '<br />';
             inout += Tools.HTML.sumbitBtn('discord');
-            output += generateArticle('Discord', false, inout);
+            output += generateArticle('Discord', inout);
         }
         let globalOutput = ``;
-        globalOutput += `Lenguaje: ${generateLangSelect('language', Config.language)}<br/>`;
+        globalOutput += '<br />';
+        Features.forEach(feature => {
+            if(typeof feature.settingsMenu === 'function') {
+                let fun = feature.settingsMenu('global');
+                if (fun !== undefined) globalOutput +=  `<br />${fun}`;
+            }
+        });
+        globalOutput += '<br /><br />';
         globalOutput += Tools.HTML.sumbitBtn('global');
-        output += generateArticle('Global', false, globalOutput);
+        output += generateArticle('Global', globalOutput);
         return output;
     }
     finishResponse (request, response, secToken, post) {
@@ -252,6 +219,7 @@ class Settings {
                    output = Tools.FS(`${SETTINGS_PATH}templates/home.html`).readSync().toString();
                    output = output.replace('${TAB_SECTIONS}', this.generateSections());
                    output = output.replace('${CONTENT_SECTIONS}', this.generateContent());
+                   output = output.replace('${FEATURE_VALIDATION}', generateValidation());
                // }
             }
 

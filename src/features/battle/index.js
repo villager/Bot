@@ -8,11 +8,28 @@ const LadderManager = require('./ladder');
 
 exports.key = 'showdown';
 
+
+function onUpdate(post, settings) {
+	if(post.update && post.maxBattles) {
+		if(post.update === 'global') {
+			Config.maxBattles = post.maxBattles;
+            Features('settings').update('global', {maxBattles:post.maxBattles});
+		}
+	}
+}
 exports.init = function (server) {
+	Features.eventEmitter.on('onUpdate', onUpdate);
 	BattleBot.init();
 	TourManager.clearData(server);
 	TeamBuilder.loadTeamList(server);
 };
+
+exports.settingsMenu = function(type) {
+	if(type === 'global') {
+		let output = `Maximas Batallas: ${Tools.HTML.textInput('maxBattles', Config.maxBattles)}<br />`;
+		return Tools.HTML.createDetails('Batallas', output);
+	}
+}
 
 exports.parse = function(server, room, message, isIntro, spl) {
 	switch (spl[0]) {

@@ -6,8 +6,8 @@ exports.textInput = function(name, value) {
 exports.sumbitBtn = function(value) {
     return `<input type="submit" name="update" value="${value}" />`;
 };
-exports.createUL = function(args, isSecond) {
-    let buf = `<ul class ="${isSecond ? 'tabs2' : 'tabs'}">`;
+exports.createUL = function(args) {
+    let buf = `<ul class ="tabs">`;
     for (const arg of args) {
         if(typeof arg === 'object') {
             if(!arg.id) arg.id = toId(arg.name);
@@ -15,8 +15,14 @@ exports.createUL = function(args, isSecond) {
         } else {
             buf += `<li><a href="#${toId(arg)}"><span>${arg}</span></a></li>`;
         }
-        buf += ``;
     }
     buf += '</ul>';
     return buf;
 }
+exports.createDetails = function(id, output) {
+    let buf = '<details>';
+    buf += `<summary>${id}</summary><br />`;
+    buf += output;
+    buf += `</details>`;
+    return buf;
+};

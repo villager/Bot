@@ -4,7 +4,6 @@ class Parser {
     constructor(bot) {
 		this.bot = bot;
 		this.messageId = 0;
-		this.language = 'es';
 	}
     splitCommand(message) {
 		this.cmd = '';
@@ -92,7 +91,10 @@ class Parser {
 	}
 	langReply(msg, ...args) {
 		let i = 1;
-		let output = Features.get('languages').get(this.language, this.cmd)[msg];
+		let settingsLang = Features('settings').get(this.bot.id).language;
+		let language = this.bot.language;
+		if(settingsLang) language = settingsLang; // Settings is the king
+		let output = Features.get('languages').get(language, this.cmd)[msg];
 		for (const arg of args) {
 			output = output.replace(`$${i}`,arg);
 			i++;
