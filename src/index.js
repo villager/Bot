@@ -49,22 +49,7 @@ class GBot {
         for (let i in this.servers) {
             let Server = this.servers[i];
             Server.connect();
-            Server.connection.on('message', () => {
-                Chat.loadPlugins();
-            });
-            Server.connection.on('close', (code, message) => {
-                console.log('Disconnected from ' + i  + ': ' + code);
-                if (Server.disconnecting) return;
-                console.log('Connection lost to ' +i  + ': ' + message);
-                delete this.servers[i];
-                if (!Server.autoreconnect) return;
-                console.log('Reconnecting to ' + i + ' in one minute.');
-                let reconnect = setTimeout(() => {
-                    this.servers[i] = new PSBot(Config.servers[i]);
-                    this.servers[i].connect();
-                    clearInterval(reconnect);
-                }, 60 * 1000);
-            });
+            Chat.loadPlugins();
         }
         this.discord.connect();
     }

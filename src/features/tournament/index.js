@@ -82,9 +82,9 @@ exports.init = function () {
 exports.parse = function (server, room, message, isIntro, spl) {
 	if(!winners[server.id]) winners[server.id] = {};
 	if(!winners[server.id][room]) winners[server.id][room] = {};
-	if(spl[0] === 'c:' && toId(spl[2]) === winners[server.id][room]) {
+	if(spl[0] === 'c:' && toId(spl[2]) === toId(winners[server.id][room])) {
 		for (let i in server.formats) {
-			if(toId(message).indexOf(toId(server.formats[i].name)) > -1) {
+			if(toId(message).indexOf(i) > -1 || toId(message).indexOf(toId(server.formats[i].name)) > -1) {
 				let details = {
 					format: toId(server.formats[i].name),
 					type: 'elimination',
@@ -99,7 +99,9 @@ exports.parse = function (server, room, message, isIntro, spl) {
 	if (spl[0] !== 'tournament') return;
     if (isIntro) return;
     if(!tourData[server.id]) tourData[server.id] = {};
-    if(!tourData[server.id][room]) tourData[server.id][room] = {};
+	if(!tourData[server.id][room]) tourData[server.id][room] = {};
+	if(!tournaments[server.id]) tournaments[server.id] = {};
+	if(!tournaments[server.id][room]) tournaments[server.id][room] = {};
     if (!tourData[room]) tourData[room] = {};
     let tourRoom = tournaments[server.id][room];
 	switch (spl[1]) {

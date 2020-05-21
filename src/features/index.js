@@ -60,11 +60,8 @@ const COMMANDS_MAP = new Map([
     ['discord', 'discordCommands'],
     ['global', 'globalCommands'],
 ]);
-Features.init = function(server) {
-    Features.forEach((feature) => {
-        if(typeof feature.init === 'function') {
-            feature.init(server);
-        } 
+Features.loadPlugins = function() {
+    Features.forEach(feature => {
         if(feature.key && !Array.isArray(feature.key)) {
             if (feature.commands && typeof feature.commands === 'object') {
                 Object.assign(Chat[COMMANDS_MAP.get(feature.key)], feature.commands);
@@ -78,6 +75,15 @@ Features.init = function(server) {
         }
     });
 }
+Features.init = function(server) {
+    Features.forEach((feature) => {
+        if(typeof feature.init === 'function') {
+            feature.init(server);
+        } 
+    });
+    Features.loadPlugins();
+}
+
 Features.parse = function(server, room, message, isIntro, spl) {
     Features.forEach((feature) => {
         if(typeof feature.parse === 'function') {

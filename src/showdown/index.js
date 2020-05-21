@@ -1,11 +1,11 @@
 "use strict";
 
-const WebSocket = require('ws');
 const request = require('request');
 const EventEmitter = require('events').EventEmitter;
 const DEFAULT_ROOM = 'lobby';
 const Parser = require('./chat');
 const Room = require('./rooms');
+const SockJS = require('sockjs-client');
 
 let roomList = Object.create(null);
 
@@ -32,30 +32,77 @@ class PSBot extends EventEmitter {
 		this.users = new Map();
 		this.group = '';
 		this.language = opts.language;
-        this.parser = new Parser(this);
-        this.connection = new WebSocket(`ws://${this.ip}:${this.port}/showdown/websocket`);    
+		this.parser = new Parser(this);
+		this.sending = {};
+		this.nextSend = 0;
+		this.maxLinesSend = 3;
+        this.socket = null;    
 
     }
     get botNick() {
         return this.bot.name;
-    }
+	}
+	getConnectionUrl() {
+		return require('util').format("http://%s:%d/showdown/", this.ip, this.port);
+	}
+
+	reset() {
+		if (this.connectionRetryTimer) {
+			clearTimeout(this.connectionRetryTimer);
+			this.connectionRetryTimer = null;
+		}
+		if (this.loginRetryTimer) {
+			clearTimeout(this.loginRetryTimer);
+			this.loginRetryTimer = null;
+		}
+		for (let k in this.sending) {
+			this.sending[k].kill();
+			delete this.sending[k];
+		}
+		this.nextSend = 0;
+		this.rooms = {};
+		this.conntime = 0;
+		//this.status.onDisconnect();
+	}
     connect() {
-        this.connection.on('open', () => {
-			console.log(`${this.name} conectado correctamente a ${this.id}`);
-			this.connected = true;
+		if (this.connected || this.socket) return;
+		this.closed = false;
+		this.reset();
+		this.socket = new SockJS(this.getConnectionUrl());
+		this.socket.onerror = function () {
+			this.connecting = false;
+			this.reset();
+			if (this.socket) {
+				this.socket.close();
+				this.socket = null;
+			}
+			this.emit('disconnect');
+		}.bind(this);
+		this.socket.onopen = function () {
 			Features.init(this);
-        });
-		this.connection.on('error', (error) => {
-            console.log('Error: ' + error + ' Server: ' +  this.id);
-            Monitor.log(error, null, this.id);
-		});
-		this.connection.on('message', data => {
+			this.connecting = false;
+			//this.status.onConnection();
+			this.conntime = Date.now();
+			this.emit('connect', this.socket);
+		}.bind(this);
+		this.socket.onclose = function (e) {
+			if (!this.closed) this.socket = null;
+			this.connecting = false;
+			this.reset();
+			this.emit('disconnect', {code: e.code, message: e.reason});
+		}.bind(this);
+		this.socket.onmessage = function (e) {
+			let data = e.data;
 			if (typeof data !== "string") {
 				data = JSON.stringify(data);
 			}
+			this.lastMessage = Date.now();
+			Chat.loadPlugins();
+			this.emit('message', data);
 			this.receive(data);
-		});
-
+		}.bind(this);
+		this.connecting = true;
+		this.emit('connecting');
 
     }
 	receive(msg) {
@@ -76,60 +123,57 @@ class PSBot extends EventEmitter {
 			for (let i = firstLine; i < lines.length; i++) {
 				if (lines[i].split('|')[1] === 'init') {
 					for (let j = i; j < lines.length; j++) {
-						this.parse(room, lines[j], true);
+						this.parseLine(room, lines[j], true);
 					}
 					break;
 				} else {
-					this.parse(room, lines[i], false);
+					this.parseLine(room, lines[i], false);
 				}
 			}
 		} else {
-			this.parse(DEFAULT_ROOM, msg, false);
+			this.parseLine(DEFAULT_ROOM, msg, false);
 		}
 	}
-    parse(roomid, data, isInit) {
-		let server = Config.servers[this.id];
-		if (data.charAt(0) !== '|') data = '||' + data;
-		let parts =(data).split('|');
-		let spl = data.substr(1).split('|');
-		Features.parse(this, roomid, data, isInit, spl);
-		this.emit('line', this, roomid, data, isInit, spl);
-		if (spl[1]) {
-			var thisEvent = (spl[0].charAt(0) !== '-') ? 'major' : 'minor';
-			this.emit(thisEvent, roomid, spl[0], data.substr(spl[0].length + 2), isInit);
+    parseLine(roomid, data, isInit) {
+		let splittedLine = data.substr(1).split('|');
+		Features.parse(this, roomid, data, isInit, splittedLine);
+		this.emit('on', this, roomid, data, isInit, splittedLine);
+		if (splittedLine[0]) {
+			var thisEvent = (splittedLine[0].charAt(0) !== '-') ? 'major' : 'minor';
+			this.emit(thisEvent, roomid, splittedLine[0], data.substr(splittedLine[0].length + 2), isInit);
 		} else {
 			this.emit('major', roomid, '', data, isInit);
 		}
-		switch (parts[1]) {
+		switch (splittedLine[0]) {
 		case 'formats':
-			let formats = data.substr(parts[1].length + 2);
+			let formats = data.substr(splittedLine[0].length + 2);
 			this.updateFormats(formats);
 			this.emit('formats', formats);
 			break;
 		case 'challstr':
-			this.challengekeyid = parts[2];
-			this.challenge = parts[3];
+			this.challengekeyid = splittedLine[1];
+			this.challenge = splittedLine[2];
 			this.login(this.name, this.pass);
 			break;
 		case 'c:':
 			if(isInit) break;
-			if(Features('profiles').get(toId(parts[3]))) Features('profiles').get(toId(parts[3])).updateSeen(this.id, 'TALKING', roomid);
-			this.parser.parse(roomid, parts[3], parts.slice(4).join('|').replace('\n', ''), false);
+			if(Features('profiles').get(toId(splittedLine[2]))) Features('profiles').get(toId(splittedLine[2])).updateSeen(this.id, 'TALKING', roomid);
+			this.parser.parse(roomid, splittedLine[2], splittedLine.slice(3).join('|'), false);
 //			this.logChat(toId(roomid), data);
 			break;
 		case 'c':
 			if(isInit) break;
-			this.parser.parse(roomid, parts[2], parts.slice(3).join('|').replace('\n', ''), false);
+			this.parser.parse(roomid, splittedLine[1], splittedLine.slice(2).join('|'), false);
 //			this.parseChat(roomid, parts[2], parts.slice(3).join('|'), '');
 			//this.logChat(toId(roomid), data);
 			break;
 		case 'updateuser':
-			if (toId(parts[2]) !== toId(server.name)) return;
+			if (toId(splittedLine[1]) !== toId(this.name)) return;
 			this.send('/cmd rooms');
 			let cmds = Features.initCmds(this);
 			cmds.push(`/user ${this.name}`)
 			for (const cmd of cmds) this.send(cmd);
-			if (!this.joinedRooms && parts[3] === '1') {
+			if (!this.joinedRooms && splittedLine[2] === '1') {
 				if (Array.isArray(this.baseRooms)) {
                     for (const room of this.baseRooms) this.joinRoom(room);
 					this.joinedRooms = true;
@@ -137,22 +181,22 @@ class PSBot extends EventEmitter {
 			}
 			break;
 		case 'pm':
-			this.parser.parse(roomid, parts[2], parts.slice(4).join('|'), true);
+			this.parser.parse(roomid, splittedLine[1], splittedLine.slice(3).join('|'), true);
 	//		if (~parts[4].indexOf('/invite') && Commands.hasPermission(parts[2], 'invite')) return server.send('/join ' + parts[4].remove('/invite '));
 	//		sendTell(parts[2].substr(1, parts[2].length), server);
 			break;
 		case 'join':
 		case 'j':
 		case 'J':
-			if(Features('profiles').get(parts[2])) Features('profiles').get(parts[2]).updateSeen(this.id, 'JOIN', roomid);
+			if(Features('profiles').get(toId(splittedLine[1]))) Features('profiles').get(toId(splittedLine[1])).updateSeen(this.id, 'JOIN', roomid);
 			break;
 		case 'l':
 		case 'L':
-			if(Features('profiles').get(parts[2])) Features('profiles').get(parts[2]).updateSeen(this.id, 'LEAVE', roomid);
+			if(Features('profiles').get(toId(splittedLine[1]))) Features('profiles').get(toId(splittedLine[1])).updateSeen(this.id, 'LEAVE', roomid);
 			break;
 		case 'init':
 			this.rooms[roomid] = {
-				type: parts[2] || 'chat',
+				type: splittedLine[1] || 'chat',
 				title: '',
 				users: {},
 				userCount: 0
@@ -169,7 +213,7 @@ class PSBot extends EventEmitter {
 				}
 			break;
 			case 'title':
-				if (this.rooms[roomid]) this.rooms[roomid].title = parts[2];
+				if (this.rooms[roomid]) this.rooms[roomid].title = splittedLine[1];
 				break;
 			case 'users':
 				if (!this.rooms[roomid]) break;
@@ -183,18 +227,17 @@ class PSBot extends EventEmitter {
 		case 'html':
 			break;
 		case 'queryresponse':
-			switch (parts[2]) {
+			switch (splittedLine[1]) {
 				case 'userdetails':
-					console.log('entra aqui');
-					let data = JSON.parse(parts[3]);
+					let data = JSON.parse(splittedLine[2]);
 					if(data.id !== toId(this.name)){
-						let data = JSON.parse(parts[3]);
+						let data = JSON.parse(splittedLine[2]);
 						if(data.group) this.group = data.group;						
 					}
 				break;
 			case 'rooms':
-				if (parts[3] === 'null') break;
-                let roomData = JSON.parse(parts.slice(3));
+				if (splittedLine[2] === 'null') break;
+                let roomData = JSON.parse(splittedLine.slice(2));
                 if(!roomList[this.id]) {
                     roomList[this.id] = {};
                 }
@@ -268,13 +311,35 @@ class PSBot extends EventEmitter {
 			}
 		}
 	}
-    send(msg, room) {
-        if(!room) room = '';
-        try {
-            this.connection.send(`${room}|${msg}`)
-        } catch(err) {
-            Monitor.log(err, `Sending ${room}|${msg} crashed`, this.id);
-        }
+	send(data, room) {
+		if(!room) room = '';
+		if (!(data instanceof Array)) {
+			data = [data.toString()];
+		}
+		for (let i = 0; i < data.length; i++) {
+			data[i] = (room + '|' + data[i]);
+		}
+		return this.sendBase(data);
+	}
+	getSendId() {
+		return this.nextSend++;
+	}
+    sendBase(data) {
+		if (!this.socket) return null;
+		let id = this.getSendId();
+		let manager = new SendManager(data, 3,
+			function (msg) {
+				this.socket.send(msg);
+				this.emit('send', msg);
+			}.bind(this),
+
+			function () {
+				delete this.sending[id];
+			}.bind(this)
+		);
+		this.sending[id] = manager;
+		manager.start();
+		return manager;
     }
     login(name, pass) {
 		let self = this;
@@ -341,4 +406,83 @@ class PSBot extends EventEmitter {
         }
 	}
 }
+class SendManager {
+	/**
+	 * @param {String|Array<String>} data
+	 * @param {Number} msgMaxLines
+	 * @param {function(String)} sendFunc
+	 * @param {function} destroyHandler
+	 */
+	constructor(data, msgMaxLines, sendFunc, destroyHandler) {
+		this.data = data;
+		this.msgMaxLines = msgMaxLines;
+		this.sendFunc = sendFunc;
+		this.status = 'sending';
+		this.callback = null;
+		this.destroyHandler = destroyHandler;
+		this.err = null;
+		this.interval = null;
+	}
+
+	start() {
+		let data = this.data;
+		if (!(data instanceof Array)) {
+			data = [data.toString()];
+		} else {
+			data = data.slice();
+		}
+		let nextToSend = function () {
+			if (!data.length) {
+				clearInterval(this.interval);
+				this.interval = null;
+				this.finalize();
+				return;
+			}
+			let toSend = [];
+			let firstMsg = data.shift();
+			toSend.push(firstMsg);
+			let roomToSend = "";
+			if (firstMsg.indexOf('|') >= 0) {
+				roomToSend = firstMsg.split('|')[0];
+			}
+			while (data.length > 0 && toSend.length < this.msgMaxLines) {
+				let subMsg = data[0];
+				if (subMsg.split('|')[0] !== roomToSend) {
+					break;
+				} else {
+					toSend.push(subMsg.split('|').slice(1).join('|'));
+					data.shift();
+				}
+			}
+			this.sendFunc(toSend.join('\n'));
+		};
+		this.interval = setInterval(nextToSend.bind(this), 2000);
+		nextToSend.call(this);
+	}
+
+	finalize() {
+		this.status = 'finalized';
+		if (typeof this.callback === "function") this.callback(this.err);
+		if (typeof this.destroyHandler === "function") this.destroyHandler(this);
+	}
+
+	/**
+	 * @param {function} callback
+	 */
+	then(callback) {
+		if (this.status !== 'sending') {
+			return callback(this.err);
+		} else {
+			this.callback = callback;
+		}
+	}
+
+	kill() {
+		if (this.interval) clearInterval(this.interval);
+		this.interval = null;
+		this.err = new Error("Send Manager was killed");
+		this.finalize();
+	}
+}
+
 module.exports = PSBot;

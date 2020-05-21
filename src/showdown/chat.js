@@ -126,6 +126,7 @@ class Parser {
     parse(room, user, message, pm) {
 		this.pmTarget = '';
 		this.bot.lastMessage = message;
+
 		if(toId(this.bot.name) === toId(user)) this.bot.group = user.charAt(0);
 		if (!Features('profiles').get(toId(user))) Features('profiles').create(user);
 		Features('profiles').update(user);

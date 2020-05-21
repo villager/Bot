@@ -17,7 +17,7 @@
         "ps-data": "git://github.com/spaceshowdown/ps-data.git",
         "request": "^2.88.2",
         "sugar": "1.4.1",
-        "ws": "^7.3.0"
+        "sockjs-client": "1.1.4"
     },
     "url": "https://github.com/villager/Bot",
     "license": "MIT",
