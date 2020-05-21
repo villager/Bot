@@ -6,7 +6,8 @@ class DiscordClient extends BaseClient {
         super()
         this.activity = `Usame con: ${Config.trigger}`;
 		this.plugins = new Parser(this);
-		this.lastUser = '';
+        this.lastUser = '';
+        this.id = 'discord';
         this.lastMessage = '';
         this.language = 'es';
         this.name = Config.name;

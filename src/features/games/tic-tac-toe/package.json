@@ -1,0 +1,15 @@
+{
+    "name": "Discord BOT Tic-Tac-Toe",
+    "version": "1.0.0",
+    "main": "index.js",
+    "engines": {
+        "node": "6.0.0"
+    },
+    "author": {
+        "name": "Aldair Beltran",
+        "email": "aldairbeltran3@hotmail.com",
+        "url": "https:github.com/villager"
+    },
+    "license": "MIT",
+    "private": true
+}

@@ -8,7 +8,7 @@ exports.id = 'tours';
 
 let tournaments = exports.tournaments = {};
 let tourData = exports.tourData = {};
-
+let winners = Object.create(null);
 const Leaderboards = exports.Leaderboards = require('./leaderboards');
 exports.key = 'showdown';
 class Tournament {
@@ -59,12 +59,12 @@ class Tournament {
 
     }
 }
-exports.newTour = function(server, room, details) {
+function newTour(server, room, details) {
     if(!tournaments[server.id]) tournaments[server.id] = {};
     tournaments[server.id][room] = new Tournament(server, room, details);
     tournaments[server.id][room].createTour();
 };
-
+exports.newTour = newTour;
 exports.init = function () {
     for (let i in tournaments) {
         for (let x in tournaments[i]) {
@@ -80,6 +80,22 @@ exports.init = function () {
     Leaderboards.load();
 };
 exports.parse = function (server, room, message, isIntro, spl) {
+	if(!winners[server.id]) winners[server.id] = {};
+	if(!winners[server.id][room]) winners[server.id][room] = {};
+	if(spl[0] === 'c:' && toId(spl[2]) === winners[server.id][room]) {
+		for (let i in server.formats) {
+			if(toId(message).indexOf(toId(server.formats[i].name)) > -1) {
+				let details = {
+					format: toId(server.formats[i].name),
+					type: 'elimination',
+					maxUsers: null,
+					timeToStart: 30 * 1000,
+					autodq: 1.5
+				};
+				newTour(server, room, details);
+			}
+		}
+	}
 	if (spl[0] !== 'tournament') return;
     if (isIntro) return;
     if(!tourData[server.id]) tourData[server.id] = {};
@@ -124,10 +140,11 @@ exports.parse = function (server, room, message, isIntro, spl) {
 		case 'end':
 			try {
 				var data = JSON.parse(spl[2]);
-				for (let i in data)
-					tourData[server.id][room][i] = data[i];
-            } catch (e){}
-            
+				for (let i in data) tourData[server.id][room][i] = data[i];
+            	winners[server.id][room] = data.results[0][0];
+			} catch (e){}
+			// Validar que pueda vocear la felicitacion
+			server.send(`Felicidades **${winners[server.id][room]}**, escoge tier para el siguiente torneo`);
 			Leaderboards.onTournamentEnd(server, room, tourData[server.id][room]);
 			delete tourData[server.id][room];
 			if (tourRoom && tourRoom.startTimer) clearTimeout(tourRoom.startTimer);

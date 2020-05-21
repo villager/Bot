@@ -35,8 +35,9 @@ exports.commands = {
 				helpCmd = target + 'help';
 			}
 			if (helpCmd in allCommands) {
+				let id = this.bot.language;
                 if (Array.isArray(allCommands[helpCmd])) {
-					this.sendReply(allCommands[helpCmd].join('\n'));
+					this.sendReply(Features('languages').get(id, target)['msg']);
 				}
 			}
 		}
@@ -48,9 +49,14 @@ exports.commands = {
         if(!target) return this.runHelp('say');
 		this.sendReply(target);
     },
-    sayhelp: [Features('languages').get(Config.language, 'say')['msg']],
+    sayhelp: ['msg'],
 	eval: function(target) {
-		this.sendReply(eval(target));
+		if(!this.can('hotpatch', true)) return false;
+		if(this.bot.id !== 'discord') {
+			this.sendReply(`!code ${eval(target)}`);
+		} else {
+			this.sendReply(eval(target));
+		}
 	},
     pick: function(target) {
         if (!target || !target.includes(',')) {
@@ -60,5 +66,5 @@ exports.commands = {
         const pickedOption = options[Math.floor(Math.random() * options.length)].trim();
 		this.replyTrad('choose', pickedOption);
     },
-    pickhelp: [Features('languages').get(Config.language, 'pick')['msg']],
+    pickhelp: ['msg'],
 };

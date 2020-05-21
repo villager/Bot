@@ -17,20 +17,19 @@ exports.LANG_ALIASES = LANG_ALIASES;
 
 exports.settingsMenu = function(type) {
     let output = '';
-    if(type === 'global') {
-        output += `Lenguaje: ${Tools.HTML.textInput('language', Config.language)}<br />`;
-
-    } else if(type === 'discord') {
+    if(type === 'discord') {
         output += `Lenguaje: ${Tools.HTML.textInput('language', Discord.language)}<br />`;   
-
+        return Tools.HTML.createDetails('Lenguaje', output);
     } else {
+        let returned = '';
         Bot.forEach(bot => {
             if (bot.id === type.id) {
                 output += `Lenguaje: ${Tools.HTML.textInput('language', bot.language)} <br />`;
+                returned = Tools.HTML.createDetails('Lenguaje', output);
             }
-        });        
+        });     
+        return returned;   
     }
-    return Tools.HTML.createDetails('Lenguaje', output);
 }
 function validLanguage() {
     let langs = [];
@@ -38,6 +37,7 @@ function validLanguage() {
     for (const lang of languages) langs.push(lang[0]);
     return new Set(langs);
 }
+
 function settingsValidation() {
     let buf = '';
     buf += `\n\t\t/** VALIDACION DE LENGUAJES **/`;
@@ -49,11 +49,8 @@ exports.settingsValidation = settingsValidation;
 
 function onUpdate(post) {
     if(post.update && validLanguage().has(post.language)) {
-        if(post.update === 'global') {
-            Config.language = post.language;
-            Features('settings').update('global', {language:post.language});
-        } else if(post.update === 'discord') {
-            Discord.plugins.language = post.language; 
+        if(post.update === 'discord') {
+            Discord.language = post.language; 
             Features('settings').update('discord', {language:post.language});
         } else {
             Bot.forEach(bot => {

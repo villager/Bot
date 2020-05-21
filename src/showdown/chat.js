@@ -77,6 +77,24 @@ class Parser {
 
 		return commandHandler;
 	}
+	canBox(user) {
+		let RANK_PERMISSION = ['*', '#', '&', '~'];
+		if (toId(user)) {}
+	}
+	sendStrict(data) {
+		if(this.pmTarget) {
+			return this.bot.send(`/pm ${this.pmTarget}, ${data}`, this.room);	
+		} else {
+			if(!this.can('games', false)) { // Can't brodcast
+				return this.bot.send(`/pm ${this.user.id}, ${data}`, this.room);
+			} {
+				return this.bot.send(data, this.room);	
+			}
+		}		
+	}
+	strictTrad(msg, ...args) {
+		return this.sendStrict(this.langReply(msg, ...args));
+	}
 	sendReply(data) {
 		if(this.pmTarget) {
 			this.bot.send(`/pm ${this.pmTarget}, ${data}`, this.room);	
@@ -100,23 +118,22 @@ class Parser {
 		this.sendReply(this.langReply(msg, ...args));
 
 	}
-	can(permission) {
-		for (const owner of Config.owners) {
-			for (const nick of owner.aliases) {
-				if(toUserName(nick) === toUserName(this.user)) return true;
-			}
-		}
-		this.sendReply('Acceso Denegado');
+	can(permission, broadcast) {
+		if(Chat.hasAuth(this.bot.id, this.user, permission)) return true;
+		if(broadcast) this.sendReply('Acceso Denegado');
 		return false;
 	}
     parse(room, user, message, pm) {
 		this.pmTarget = '';
 		this.bot.lastMessage = message;
+		if(toId(this.bot.name) === toId(user)) this.bot.group = user.charAt(0);
+		if (!Features('profiles').get(toId(user))) Features('profiles').create(user);
+		Features('profiles').update(user);
 		this.bot.lastUser = user;
 		let commandHandler = this.splitCommand(message);
 		if (typeof commandHandler === 'function') {
 			if(toId(this.bot.lastUser) === toId(Config.name)) return; // Ignorar los  comandos dichos por el mismo bot
-            this.user = user;
+            this.user = Features('profiles').get(toId(user));
 			this.message = message;
 			this.room = room;
 			if(pm) this.pmTarget = user;
@@ -138,7 +155,7 @@ class Parser {
 			result = commandHandler.call(this, this.target, this.room, this.user, this.message);
 		} catch (err) {
 			Monitor.log(err,{
-				user: toUserName(this.user),
+				user: this.user.id,
 				message: this.message,
 				pmTarget: this.pmTarget && this.pmTarget,
 				room: this.room,

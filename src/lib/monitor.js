@@ -3,8 +3,8 @@
 const fs = require('fs');
 const path = require('path');
 
-const logPath = path.resolve(__dirname, '../logs/errors.log');
-const debugPath = path.resolve(__dirname, '../logs/debug.log');
+const logPath = path.resolve(__dirname, '../../logs/errors.log');
+const debugPath = path.resolve(__dirname, '../../logs/debug.log');
 
 exports.log = function(error, data, server) {
     let stack = typeof error === 'string' ? error : error.stack;

@@ -7,7 +7,7 @@ Chat.discordCommands = {};
 Chat.packageData = {};
 
 Chat.loadPlugins = function() {
-    Tools.FS('package.json').readIfExists().then(data => {
+    Tools.FS('../package.json').readIfExists().then(data => {
         if (data) Chat.packageData = JSON.parse(data);
     });
      /**
@@ -36,4 +36,17 @@ Chat.loadPlugins = function() {
         if(plugin.commands) Object.assign(Chat.psCommands, plugin.commands);
     }
     Object.assign(Chat.psCommands, Chat.globalCommands);
+};
+Chat.hasAuth = function(id, user, perm) {
+    if(id === 'discord') return true; // Luego me pongo con esto
+    for (const owner of Config.owners) {
+        if(owner.id === user.id) return true;
+        for (const aliases of owner.aliases) {
+            if(aliases === user.id) return true;
+        }
+    }
+    let rank = Config.permissions[perm];
+    if(rank == user.group) return true; // It's equal 
+    if (Config.rankList.indexOf(user.group) >= Config.rankList.indexOf(rank)) return true;
+    return false;
 };

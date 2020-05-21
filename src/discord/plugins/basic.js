@@ -1,6 +1,6 @@
 exports.commands = {
 	errorlog() {
-		if(!this.can('hotpatch')) return false;
+		if(!this.can('hotpatch', true)) return false;
 		let log = Tools.FS('../logs/errors.log').readSync().toString();
 		Tools.Hastebin.upload(log, (r, link) =>{
 			let fullLink = 'https://' + link;
@@ -15,7 +15,4 @@ exports.commands = {
         por ${packageData.author && packageData.author.name} para el servidor Space Showdown
         `, packageData.url);
     },
-    test() {
-		this.test();
-	}
 };

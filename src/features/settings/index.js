@@ -261,7 +261,7 @@ exports.init = function() {
                 break;
             case 'global':
                 for (let x in settings[i]) {
-                    Object.assign(Config, settings[i][x]);
+                    Config[x] = settings[i][x];
                 }
                 break;
             default: {

@@ -6,7 +6,6 @@ const EventEmitter = require('events').EventEmitter;
 const DEFAULT_ROOM = 'lobby';
 const Parser = require('./chat');
 const Room = require('./rooms');
-const User = require('./users');
 
 let roomList = Object.create(null);
 
@@ -30,6 +29,8 @@ class PSBot extends EventEmitter {
         this.challengekeyid = '';
 		this.challenge = '';
 		this.autoreconnect = true;
+		this.users = new Map();
+		this.group = '';
 		this.language = opts.language;
         this.parser = new Parser(this);
         this.connection = new WebSocket(`ws://${this.ip}:${this.port}/showdown/websocket`);    
@@ -112,6 +113,7 @@ class PSBot extends EventEmitter {
 			break;
 		case 'c:':
 			if(isInit) break;
+			if(Features('profiles').get(toId(parts[3]))) Features('profiles').get(toId(parts[3])).updateSeen(this.id, 'TALKING', roomid);
 			this.parser.parse(roomid, parts[3], parts.slice(4).join('|').replace('\n', ''), false);
 //			this.logChat(toId(roomid), data);
 			break;
@@ -125,6 +127,7 @@ class PSBot extends EventEmitter {
 			if (toId(parts[2]) !== toId(server.name)) return;
 			this.send('/cmd rooms');
 			let cmds = Features.initCmds(this);
+			cmds.push(`/user ${this.name}`)
 			for (const cmd of cmds) this.send(cmd);
 			if (!this.joinedRooms && parts[3] === '1') {
 				if (Array.isArray(this.baseRooms)) {
@@ -141,9 +144,11 @@ class PSBot extends EventEmitter {
 		case 'join':
 		case 'j':
 		case 'J':
+			if(Features('profiles').get(parts[2])) Features('profiles').get(parts[2]).updateSeen(this.id, 'JOIN', roomid);
 			break;
 		case 'l':
 		case 'L':
+			if(Features('profiles').get(parts[2])) Features('profiles').get(parts[2]).updateSeen(this.id, 'LEAVE', roomid);
 			break;
 		case 'init':
 			this.rooms[roomid] = {
@@ -179,6 +184,14 @@ class PSBot extends EventEmitter {
 			break;
 		case 'queryresponse':
 			switch (parts[2]) {
+				case 'userdetails':
+					console.log('entra aqui');
+					let data = JSON.parse(parts[3]);
+					if(data.id !== toId(this.name)){
+						let data = JSON.parse(parts[3]);
+						if(data.group) this.group = data.group;						
+					}
+				break;
 			case 'rooms':
 				if (parts[3] === 'null') break;
                 let roomData = JSON.parse(parts.slice(3));
@@ -303,12 +316,14 @@ class PSBot extends EventEmitter {
 				if (json.actionsuccess) {
 					self.named = true;
 					self.send('/trn ' + name + ',0,' + json['assertion']);
+					self.send(`/user ${name}`);
 				} else {
 					console.log('Could not log in: ' + JSON.stringify(json), self.id);
 				}
 			} catch (e) {
 				self.named = true;
 				self.send('/trn ' + name + ',0,' + body);
+				self.send(`/user ${name}`);
 			}
 		}
     }

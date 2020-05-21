@@ -16,6 +16,7 @@
         "node-static": "^0.7.11",
         "ps-data": "git://github.com/spaceshowdown/ps-data.git",
         "request": "^2.88.2",
+        "sugar": "1.4.1",
         "ws": "^7.3.0"
     },
     "url": "https://github.com/villager/Bot",

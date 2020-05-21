@@ -1,6 +1,6 @@
 exports.commands = {
     errorlog: function(target, room, user) {
-        if(!this.can('hotpatch')) return false;
+        if(!this.can('hotpatch', true)) return false;
         let log = Tools.FS('../logs/errors.log').readSync().toString();
         Tools.Hastebin.upload(log, (r, link) => {
             let fullLink = 'https://' + link;
@@ -10,6 +10,6 @@ exports.commands = {
     },  
     about: function() {
         let packageData = Chat.packageData;
-        this.replyTrad('msg', Config.name, (packageData.author && packageData.author.name), packageData.url);
+        this.strictTrad('msg', Config.name, (packageData.author && packageData.author.name), packageData.url);
     },
 };
