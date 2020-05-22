@@ -6,7 +6,15 @@
             "link": "Puedes ver el log de errores aqui $1",
             "error": "Lo sentimos, no pudimos encontrar el enlace"
         },
-        "pick": "Opcion elegida: **$1**"
+        "pick": "Opcion elegida: **$1**",
+        "language": {
+            "target":  "Selecciona un idioma! (en/es)",
+            "unavileable": "No tenemos ese idioma, solo tenemos en/es",
+            "now_es": "El idioma de la sala sera español!",
+            "now_en": "El idioma de la sala sera ingles!",
+            "alr_es": "El idioma de la sala ya era español!",
+            "alr_en": "El idoma de la sala ya era ingles!"
+        }
         
     },
     "en": {
@@ -16,7 +24,14 @@
             "link": "Here is your errorlog $1",
             "error": "Sorry... we couldn't get the error log"
         },
-        "pick": "I randomly picked: **$1**"
-        
+        "pick": "I randomly picked: **$1**",
+        "language": {
+            "target": "Select a language! (en/es)",
+            "unavileable": "We don't have that language, we just have en/es",
+            "now_en": "The room's language is now english",
+            "now_es": "The room's language is now spanish",
+            "alr_en": "The room's language is already english",
+            "alr_es": "The room's language is already spanish"
+        }
     }
 }

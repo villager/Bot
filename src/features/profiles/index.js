@@ -14,7 +14,11 @@ exports.init = function() {
 class User {
     constructor(user, options) {
         this.id = toId(user);
-        this.discordId = false;
+        this.discord = {
+            name: null,
+            discriminator: null,
+            id: 0,
+        }
         this.name = user;
         this.group = '';
         this.lastSeen = {
@@ -23,6 +27,7 @@ class User {
             server: false,
             room: null,
         };
+        this.alts = [];
         this.inbox = [];
         users[this.id] = this;
         Object.assign(this, options);
@@ -39,6 +44,12 @@ class User {
         this.lastSeen.server = id;
         SaveUsers();
     } 
+    updateDiscord(options) {
+        if(this.discord.id) return false;
+        this.discord.discriminator = options.discriminator;
+        this.discord.id = options.id;
+        SaveUsers();
+    }
 }
 function getUser(user) {
     if(!user) return false;
@@ -48,15 +59,19 @@ function getUser(user) {
 exports.get = getUser;
 function findByDiscord(discordId) {
     for (let i in users) {
-        if(toId(users[i].discordId) === toUserName(discordId)) return users[i];
+        if(toId(users[i].discord.name) === toUserName(discordId)) return users[i];
     }
     return false;
 }
 
 exports.findDiscord = findByDiscord;
 exports.isRegistered = function(user) {
-    user = toId(user);
-    if (!findByDiscord(user)) return false;
+    let found = findByDiscord(user.username);
+    if (!found) return false;
+    found.updateDiscord({
+        id: user.id,
+        discriminator: user.discriminator
+    });
     return true;
 }
 exports.create = function(user) {
@@ -71,18 +86,50 @@ exports.update = function(user) {
 function checkRegister(id) {
     for (let i in users) {
         let user = users[i];
-        if(user.discordId === id) return user;
+        if(user.discord.name === id) return user;
     }
     return false;
+}
+exports.findInPS = function(user, server, message, sendBy) {
+    user = toId(user);
+    Bot.forEach(bot => {
+        bot.rooms.forEach(room => {
+            for (let i in room.users) {
+                let uid = room.users[i];
+                if (toId(uid) === user) {
+                    if(server !== bot.id) {
+                        return bot.send(`/pm ${user}, ${message}`); 
+                    } else {
+                        return 0;
+                    }
+                }
+            }
+        });
+    });
+    let dbUser = getUser(toId(user));
+    if(dbUser) {
+        if(dbUser.discord.id) {
+            if(Discord) {
+                Discord.sendDM(dbUser.discord.id, message);
+            }
+        } else {
+            dbUser.inbox.push({
+                by: sendBy,
+                message: message,
+                date: Date.now()
+            });
+            SaveUsers();
+        }
+    }
 }
 exports.commands = {
     register: function (target,room, user) {
         if(!getUser(user.id)) return this.sendReply('LO SENTIMOS, NO TE TENEMOS REGISTRADO');
-        if (getUser(user.id).discordId) return this.sendReply('Ya habias registrado una ID');
+        if (getUser(user.id).discord.name) return this.sendReply('Ya habias registrado una ID');
         if (!target) return this.sendReply('Especifica una ID a registrar');
         let check = checkRegister(target);
         if(check) return this.sendReply(`La Id que intentas registrar ya se encuentra registrada por el usuario ${chek.name}, si esa es tu ID, contacta a un administrador`);
-        getUser(user.id).discordId = target;
+        getUser(user.id).discord.name = target;
         SaveUsers();
         this.sendReply(`Se ha registrado correctamente la ID ${target}, ahora podras disfrutar de las funciones que tenemos para ti`);
     },

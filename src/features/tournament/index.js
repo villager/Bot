@@ -99,7 +99,7 @@ exports.parse = function (server, room, message, isIntro, spl) {
 		}
 	}
 	if (spl[0] !== 'tournament') return;
-    if (isIntro) return;
+	if (isIntro) return;
     if(!tourData[server.id]) tourData[server.id] = {};
 	if(!tourData[server.id][room]) tourData[server.id][room] = {};
 	if(!tournaments[server.id]) tournaments[server.id] = {};
@@ -158,7 +158,7 @@ exports.parse = function (server, room, message, isIntro, spl) {
 		case 'forceend':
 			delete tourData[server.id][room];
 			if (tourRoom && tourRoom.startTimer) clearTimeout(tourRoom.startTimer);
-			if (tournaments[server.id][room]) delete tournaments[server.id][room];
+			if (tournaments[server.id][room.id]) delete tournaments[server.id][room];
 			break;
 	}
 }
@@ -169,8 +169,8 @@ exports.commands = {
 	tourend: function (target, room, user) {
 		if (/**this.roomType !== 'chat' || */ !this.can('games', true)) return false;
 		if (!tourData[this.serverid]) tourData[this.serverid] = {};
-		if (!tourData[this.serverid][room]) return this.sendReply(Lang.getSub(this.lang, 'tourend', 'err'));
-		if (this.cmd === 'tourstart' && !tourData[this.serverid][room].signups) return this.sendReply(Lang.getSub(this.lang, 'tourend', 'err2'));
+		if (!tourData[this.serverid][room.id]) return this.sendReply(Lang.getSub(this.lang, 'tourend', 'err'));
+		if (this.cmd === 'tourstart' && !tourData[this.serverid][room.id].signups) return this.sendReply(Lang.getSub(this.lang, 'tourend', 'err2'));
         this.sendReply("/tournament " + (this.cmd === 'tourend' ? 'end' : 'start'));
     },
 	maketour: 'tournament',
@@ -179,7 +179,7 @@ exports.commands = {
 	tournament: function (target, room, user) {
         if (/*this.roomType !== 'chat' || */ !this.can('games', true)) return false;
 		if (!tourData[this.serverid]) tourData[this.serverid] = {};
-		if (tourData[this.serverid][room]) {
+		if (tourData[this.serverid][room.id]) {
 			if (toId(target) === 'end') return this.runCmd('tourend');
 			if (toId(target) === 'start') return this.runCmd('tourstart');
 			return this.sendReply(Lang.getSub(this.lang, 'tour', 'e2'));
@@ -307,26 +307,26 @@ exports.commands = {
 				else details.scoutProtect = true;
 			}
 		}
-		newTour(this.bot, room, details);
+		newTour(this.bot, room.id, details);
 		setTimeout(() => {
-			if (tournaments[this.serverid][room] && !tourData[this.serverid][room]) {
+			if (tournaments[this.serverid][room.id] && !tourData[this.serverid][room.id]) {
 				this.sendReply(Lang.getSub(this.lang, 'tour', 'notstarted'));
-				delete tournaments[this.serverid][room];
+				delete tournaments[this.serverid][room.id];
 			}
 		}, 2500);
     },   
 	unofficial: 'official',
 	official: function (target, room, user) {
 		//if (!this.can("official")) return;
-		if (!Leaderboards.isConfigured(this.serverid, room)) return this.sendReply(Lang.replaceSub(this.lang, 'official', 'not', room));
-		if (!tourData[this.serverid][room]) return this.sendReply(Lang.getSub(this.lang, 'official',"notour"));
+		if (!Leaderboards.isConfigured(this.serverid, room.id)) return this.sendReply(Lang.replaceSub(this.lang, 'official', 'not', room.title));
+		if (!tourData[this.serverid][room.id]) return this.sendReply(Lang.getSub(this.lang, 'official',"notour"));
 		if (this.cmd === "unofficial") {
-			if (!tourData[this.serverid][room].isOfficialTour) return this.sendReply(Lang.getSub(this.lang, 'official',"already-not"));
-			tourData[this.serverid][room].isOfficialTour = false;
+			if (!tourData[this.serverid][room.id].isOfficialTour) return this.sendReply(Lang.getSub(this.lang, 'official',"already-not"));
+			tourData[this.serverid][room.id].isOfficialTour = false;
 			this.sendReply(Lang.getSub(this.lang, 'official', "unofficial"));
 		} else {
-			if (tourData[this.serverid][room].isOfficialTour) return this.sendReply(Lang.getSub(this.lang, 'official',"already"));
-			tourData[room][this.serverid].isOfficialTour = true;
+			if (tourData[this.serverid][room.id].isOfficialTour) return this.sendReply(Lang.getSub(this.lang, 'official',"already"));
+			tourData[this.serverid][room.id].isOfficialTour = true;
 			this.sendReply(Lang.getSub(this.lang, 'official',"official"));
 		}
     },

@@ -5,6 +5,7 @@ const Config = exports;
 /**
  * Global Config
  */
+
 Config.trigger = '.';
 
 Config.owners = [
@@ -24,6 +25,17 @@ Config.language = 'en'; // language for helps
 Config.initCmds = [];
 
 Config.maxBattles = 5;
+
+Config.rankList = ['+', '\u2605', '%', '@', '*', '#', '&', '~'];
+
+Config.permissions = {
+	'games': '+',
+	'lock': '%',
+	'ban': '@',
+	'invite': '#',
+	'forcewin': '&',
+	'hotpatch': '~',
+}
 
 Config.tourDefault = {
 	format: 'gen8ou',
@@ -76,6 +88,12 @@ Config.servers = {
         name: "nick2",
         password: "pass2"
     }
+};
+
+Config.Github = {
+	room: "",
+	secret: "",
+	port: 3420
 };
 /**
  * Discord Config

@@ -2,6 +2,9 @@
 
 const pathModule = require('path');
 const ROOT_PATH = pathModule.resolve(__dirname, '..');
+let roomLang = Object.create(null);
+
+exports.key = 'showdown';
 
 class JSONMap extends Map {
     constructor(options) {
@@ -11,6 +14,10 @@ class JSONMap extends Map {
 		return Array.from(this);
 	}    
 }
+const LANG_LIST = new Set(['en', 'es']);
+const SPANISH_ALIASES = new Set(['es', 'spanish', 'español', 'espaol', 'espanol']);
+const ENGLISH_ALIASES = new Set(['en', 'ing', 'ingles', 'us', 'uk', 'english']);
+
 const LANG_ALIASES = new JSONMap([
     ['en', 'english'],
     ['es', 'spanish']
@@ -123,3 +130,23 @@ exports.init = function() {
 };
 exports.LANG_ALIASES = LANG_ALIASES;
 exports.settingsValidation = settingsValidation;
+const Lang = loadLang();
+exports.commands = {
+    language: function(target, room) {
+        if(!this.can('invite', true)) return false;
+        if(!target) return this.sendReply(Lang.getSub(this.lang, 'language', 'target'));
+        if(!LANG_LIST.has(target) && !SPANISH_ALIASES.has(target) && !ENGLISH_ALIASES.has(target)) {
+            return this.sendReply(Lang.getSub(this.lang, 'language', 'unavileable'));
+        }
+        if(SPANISH_ALIASES.has(target)) {
+            if(room.language === 'es') return this.sendReply(Lang.getSub(this.lang, 'language', 'alr_es'));
+            this.sendReply(Lang.getSub(this.lang, 'language', 'now_es'));
+            room.language = 'es';
+        }
+        if(ENGLISH_ALIASES.has(target)) {
+            if(room.language === 'en') return this.sendReply(Lang.getSub(this.lang, 'language', 'alr_en'));
+            this.sendReply(Lang.getSub(this.lang, 'language', 'now_en'));
+            room.language = 'en';            
+        }
+    }
+}

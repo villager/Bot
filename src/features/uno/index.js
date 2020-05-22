@@ -160,11 +160,13 @@ class UNO {
     }
 }
 function getGame(room) {
+    room = toId(room);
     if(!games[room]) return false;
     return games[room];
 }
 exports.getGame = getGame;
 function checkIsActive(server, room) {
+    room = toId(room);
     if(games[room]) return games[room];
     else {
         games[room] = new UNO(server, room);
@@ -172,6 +174,7 @@ function checkIsActive(server, room) {
     }
 }
 exports.parse = function(server, room, message, isIntro, spl) {
+    room = toId(room);
     if(spl[0] === 'queryresponse' && spl[1] === 'uno' && autoJoin[room]) {
         switch(spl[2]) {
             case 'signups': 
@@ -215,12 +218,12 @@ exports.commands = {
     joinunos: function(target, room) {
         if(!target) target = 'on';
         if(target == 'on') {
-            if(autoJoin[room]) return this.sendReply('Ya estaba inscrito para los juegos de UNO');
-            autoJoin[room] = 1        
+            if(autoJoin[room.id]) return this.sendReply('Ya estaba inscrito para los juegos de UNO');
+            autoJoin[room.id] = 1        
             this.sendReply('A partir de ahora me unire a todos los juegos de UNO de la sala');
         } else if(target == 'off') {
-            if(!autoJoin[room]) return this.sendReply('No estaba inscrito para los juegos de esta sala');
-            delete autoJoin[room];
+            if(!autoJoin[room.id]) return this.sendReply('No estaba inscrito para los juegos de esta sala');
+            delete autoJoin[room.id];
             this.sendReply('A partir de ahora ya no unire a los juegos de UNO de la sala');
         } else {
             return this.sendReply('No es una opcion valida (on/off)');

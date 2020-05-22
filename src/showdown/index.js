@@ -16,7 +16,7 @@ class PSBot extends EventEmitter {
         this.ip = opts.ip;
         this.connected = false;
         this.port = opts.port;
-		this.rooms =  {};
+		this.rooms =  new Map();
 		this.name = opts.name;
 		this.pass = opts.password;
 		this.named = false;
@@ -60,7 +60,7 @@ class PSBot extends EventEmitter {
 			delete this.sending[k];
 		}
 		this.nextSend = 0;
-		this.rooms = {};
+		this.rooms.clear();
 		this.conntime = 0;
 		//this.status.onDisconnect();
 	}
@@ -145,6 +145,9 @@ class PSBot extends EventEmitter {
 			this.emit('major', roomid, '', data, isInit);
 		}
 		switch (splittedLine[0]) {
+		case 'error':
+			console.log(splittedLine[1]);
+			break;
 		case 'formats':
 			let formats = data.substr(splittedLine[0].length + 2);
 			this.updateFormats(formats);
@@ -158,12 +161,12 @@ class PSBot extends EventEmitter {
 		case 'c:':
 			if(isInit) break;
 			if(Features('profiles').get(toId(splittedLine[2]))) Features('profiles').get(toId(splittedLine[2])).updateSeen(this.id, 'TALKING', roomid);
-			this.parser.parse(roomid, splittedLine[2], splittedLine.slice(3).join('|'), false);
+			this.parser.parse(this.rooms.get(roomid), splittedLine[2], splittedLine.slice(3).join('|'), false);
 //			this.logChat(toId(roomid), data);
 			break;
 		case 'c':
 			if(isInit) break;
-			this.parser.parse(roomid, splittedLine[1], splittedLine.slice(2).join('|'), false);
+			this.parser.parse(this.rooms.get(roomid), splittedLine[1], splittedLine.slice(2).join('|'), false);
 //			this.parseChat(roomid, parts[2], parts.slice(3).join('|'), '');
 			//this.logChat(toId(roomid), data);
 			break;
@@ -188,41 +191,40 @@ class PSBot extends EventEmitter {
 		case 'join':
 		case 'j':
 		case 'J':
+			if(isInit) break; // no nos interesa del pasado
+
 			if(Features('profiles').get(toId(splittedLine[1]))) Features('profiles').get(toId(splittedLine[1])).updateSeen(this.id, 'JOIN', roomid);
 			break;
 		case 'l':
 		case 'L':
+			if(isInit) break; // no nos interesa del pasado
 			if(Features('profiles').get(toId(splittedLine[1]))) Features('profiles').get(toId(splittedLine[1])).updateSeen(this.id, 'LEAVE', roomid);
 			break;
 		case 'init':
-			this.rooms[roomid] = {
-				type: splittedLine[1] || 'chat',
-				title: '',
-				users: {},
-				userCount: 0
-			};
-			this.roomcount = Object.keys(this.rooms).length;
-			this.emit('joinRoom', roomid, this.rooms[roomid].type);
+			this.rooms.set(roomid, new Room(roomid, {
+				type: splittedLine[1],
+			}));
+			this.roomcount = this.rooms.size;
+			this.emit('joinRoom', roomid, this.rooms.get(roomid).type);
 
 			break;
 		case 'deinit':
-				if (this.rooms[roomid]) {
-					this.emit('leaveRoom', roomid);
-					delete this.rooms[roomid];
-					this.roomcount = Object.keys(this.rooms).length;
-				}
+			if (this.rooms.has(roomid)) {
+				this.emit('leaveRoom', this.rooms.get(roomid));
+				this.rooms.delete(roomid);
+				this.roomcount = this.rooms.size;
+			}
 			break;
-			case 'title':
-				if (this.rooms[roomid]) this.rooms[roomid].title = splittedLine[1];
-				break;
-			case 'users':
-				if (!this.rooms[roomid]) break;
-				var userArr = data.substr(7).split(",");
-				this.rooms[roomid].userCount = parseInt(userArr[0]);
-				for (var k = 1; k < userArr.length; k++) {
-					this.rooms[roomid].users[toId(userArr[k])] = userArr[k];
-				}
-				break;
+		case 'title':
+			if (this.rooms.has(roomid)) {
+				this.rooms.get(roomid).updateTitle(splittedLine[1]);
+			}
+			break;
+		case 'users':
+			if (!this.rooms.has(roomid)) break;
+				let userArr = data.substr(9).split(",");
+				this.rooms.get(roomid).updateUsers(userArr);
+			break;
 		case 'raw':
 		case 'html':
 			break;
@@ -393,8 +395,8 @@ class PSBot extends EventEmitter {
 		}
     }
     joinRoom(room) {
-        if(this.rooms[room]) return; // Ya estaba en la sala
-		this.rooms[room] = new Room(room);
+        if(this.rooms.has(room)) return; // Ya estaba en la sala
+		this.rooms.set(room, new Room(room));
         this.send(`/join ${room}`);
     }
     joinAllRooms() {

@@ -7,7 +7,7 @@ class Parser {
         this.target = '';
         this.bot = bot;
 		this.fullCmd = '';
-        this.room = '';
+        this.room = null;
         this.user = '';
         this.pmTarget = '';
 		this.message = '';
@@ -79,20 +79,20 @@ class Parser {
 	}
 	sendStrict(data) {
 		if(this.pmTarget) {
-			return this.bot.send(`/pm ${this.pmTarget}, ${data}`, this.room);	
+			return this.bot.send(`/pm ${this.pmTarget}, ${data}`, this.room.id);	
 		} else {
 			if(!this.can('games', false)) { // Can't brodcast
-				return this.bot.send(`/pm ${this.user.id}, ${data}`, this.room);
+				return this.bot.send(`/pm ${this.user.id}, ${data}`, this.room.id);
 			} {
-				return this.bot.send(data, this.room);	
+				return this.bot.send(data, this.room.id);	
 			}
 		}		
 	}
 	sendReply(data) {
 		if(this.pmTarget) {
-			this.bot.send(`/pm ${this.pmTarget}, ${data}`, this.room);	
+			this.bot.send(`/pm ${this.pmTarget}, ${data}`, this.room.id);	
 		} else {
-			this.bot.send(data, this.room);			
+			this.bot.send(data, this.room.id);			
 		}
 	}
 	get lang() {
@@ -141,7 +141,7 @@ class Parser {
 				user: this.user.id,
 				message: this.message,
 				pmTarget: this.pmTarget && this.pmTarget,
-				room: this.room,
+				room: this.room.id,
 			}, this.bot.id);;
 		}
 		if (result === undefined) result = false;

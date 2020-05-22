@@ -71,13 +71,13 @@ class Parser {
 		return commandHandler;
     }
     parse(message) {
-	//	console.log(message); <-- Ver la estructura del mensaje
 		this.bot.lastMessage = message.content;
 		this.bot.lastUser = message.author;
 		this.channel = message.channel;
+		this.guild = message.guild;
 		this.messageId = message.id;
 		let commandHandler = this.splitCommand(message.content);
-		let isRegistered = Features('profiles').isRegistered(message.author.username);
+		let isRegistered = Features('profiles').isRegistered(message.author);
 		if(isRegistered) Features('profiles').findDiscord(message.author.username).updateSeen(this.bot.id, 'TALKING', 'Lobby');
 		if (typeof commandHandler === 'function' && !isRegistered) return this.sendReply('Lo sentimos, mientras no registres tu Id de discord no podras usar alguno de mis comandos');
 		if (isRegistered && typeof commandHandler === 'function') {
@@ -108,21 +108,6 @@ class Parser {
 		}
 		this.sendReply('Acceso Denegado');
 		return false;
-	}
-	test() {
-		this.sendReply(Embed.notify('Some title', 'Some desc here')
-		.setColor('#0099ff')
-		.setURL('https://discord.js.org/')
-		.setAuthor('Some name', 'https://i.imgur.com/wSTFkRM.png', 'https://discord.js.org')
-		.setThumbnail('https://i.imgur.com/wSTFkRM.png')
-		.addFields(
-			{ name: 'Regular field title', value: 'Some value here' },
-			{ name: '\u200B', value: '\u200B' },
-			{ name: 'Inline field title', value: 'Some value here', inline: true },
-			{ name: 'Inline field title', value: 'Some value here', inline: true },
-		)
-		.addField('Inline field title', 'Some value here', true)
-		.setFooter('Some footer text here', 'https://i.imgur.com/wSTFkRM.png'));
 	}
     embedReply(title, data) {
         this.sendReply(Embed.notify(title, data));

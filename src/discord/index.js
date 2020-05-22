@@ -18,7 +18,34 @@ class DiscordClient extends BaseClient {
             this.user.setActivity(this.activity);
         })
     }
-
+    sendMsg(id, message) {
+        let sendRoom = null;
+        this.guilds.cache.forEach(guild => {
+            guild.channels.cache.forEach(channel => {
+                if(channel.id === id) sendRoom = channel;
+            })
+        });
+        if(sendRoom) {
+            sendRoom.send(message);
+            return true;
+        } else{
+            return false;
+        }
+    }
+	sendDM(id, message) {
+		let sendTo = null;
+        this.guilds.cache.forEach(guild => {
+            guild.members.cache.forEach(user => {
+                if(user.id === id) {
+                    sendTo = user;
+                }			
+            });
+		})
+		if(sendTo) {
+			sendTo.send(message);
+			return true;
+		} else return false;
+	}
     logs() {
         this.on('error', e => new Error(`${e} \n`));
         this.on('warn', e => new Error(`WARN STATUS: ${e}\n`));
@@ -31,7 +58,6 @@ class DiscordClient extends BaseClient {
             this.plugins.parse(message);
 
         });
-
         // Connection to discord
         this.login(Config.token);
         console.log(`${Config.name} conectado correctamente a Discord`);
