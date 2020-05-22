@@ -1,6 +1,8 @@
 "use strict";
 
-let languages = exports.languages = Object.create(null);
+const pathModule = require('path');
+const ROOT_PATH = pathModule.resolve(__dirname, '..');
+
 class JSONMap extends Map {
     constructor(options) {
         super(options)
@@ -13,7 +15,62 @@ const LANG_ALIASES = new JSONMap([
     ['en', 'english'],
     ['es', 'spanish']
 ])
-exports.LANG_ALIASES = LANG_ALIASES;
+
+
+class  LoadLang {
+    constructor(path) {
+        if(!path) path = './base-lang.json';
+		this.path = pathModule.resolve(ROOT_PATH, path);
+        this.translations = Object.create(null);
+        this.path = path;
+    }
+    load() {
+        let langPackage = require(this.path);
+        for (let i in langPackage) {
+            this.translations[i] = langPackage[i];
+        }
+    }
+    get(lang, msg) {
+        let language = lang;
+        this.load();
+        if(!this.translations[toId(lang)]) {
+            if(LANG_ALIASES.has(toId(lang))) language = LANG_ALIASES.get(toId(lang));
+        }
+        if(!this.translations[language]) throw Error(`Lenguaje ${language} no existe`);
+        if(!this.translations[language][msg]) throw Error(`Mensaje ${msg} no existe en ${language}`);        
+        return this.translations[language][msg];
+    }
+    getSub (lang, msg, sub) {
+        return this.get(lang, msg)[sub];
+    }
+    replaceSub(lang, msg, sub, ...args) {
+        let i = 1;
+        let output = this.get(lang, msg)[sub];
+        for (const arg of args) {
+            output = output.replace(`$${i}`, arg);
+            i++;
+        }
+        return output;
+    }
+    replace(lang, msg, ...args) {
+        let i = 1;
+        let output = this.get(lang, msg);
+        for (const arg of args) {
+            output = output.replace(`$${i}`, arg);
+            i++;
+        }
+        return output;
+    }
+}
+function loadLang(langPath) {
+    return new LoadLang(langPath);
+
+};
+exports.load = loadLang;
+
+exports.loadHelp = function() {
+    return new LoadLang('./helps.json');
+};
 
 exports.settingsMenu = function(type) {
     let output = '';
@@ -45,7 +102,6 @@ function settingsValidation() {
     buf += `\n\t\tif(language && language !== 'es' && language !== 'en') alert('El lenguaje que tratas de ingresar no es valido');\n`;
     return buf;
 }
-exports.settingsValidation = settingsValidation;
 
 function onUpdate(post) {
     if(post.update && validLanguage().has(post.language)) {
@@ -64,30 +120,6 @@ function onUpdate(post) {
 }
 exports.init = function() {
     Features.eventEmitter.on('onUpdate', onUpdate);
-    let languagesDir = Tools.FS('./features/languages').readdirSync();
-    for (const language of languagesDir) {
-        if(Tools.FS(`./features/languages/${language}`).isFileSync()) continue;
-        loadLanguage(language);
-    }
-}
-function loadLanguage(language) {
-    let fileList = Tools.FS(`./features/languages/${language}`).readdirSync();
-    if(!languages[language]) languages[language] = {};
-    for (const file of fileList) {
-        let langPath = require(`./${language}/${file.slice(0, -3)}`);
-        if(langPath.translations) {
-            Object.assign(languages[language], langPath.translations);
-        }
-    }
-}
-function getLangMsg(lang, msg) {
-    let language = lang;
-    if(!languages[toId(lang)]) {
-        if(LANG_ALIASES.has(toId(lang))) language = LANG_ALIASES.get(toId(lang));
-    }
-    if(!languages[language]) throw Error(`Lenguaje ${language} no existe`);
-    if(!languages[language][msg]) throw Error(`Mensaje ${msg} no existe en ${language}`);
-    return languages[language][msg];
-}
-exports.getLangMsg = getLangMsg;
-exports.get = getLangMsg;
+};
+exports.LANG_ALIASES = LANG_ALIASES;
+exports.settingsValidation = settingsValidation;

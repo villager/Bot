@@ -9,11 +9,13 @@ exports.id = 'tours';
 let tournaments = exports.tournaments = {};
 let tourData = exports.tourData = {};
 let winners = Object.create(null);
+const Lang = Features('languages').load('../tournament/langs.json');
+
 const Leaderboards = exports.Leaderboards = require('./leaderboards');
 exports.key = 'showdown';
 class Tournament {
     constructor(server, room, details) {
-		this.format = details.format || 'randombattle';
+		this.format = details.format || 'gen8randombattle';
 		this.type = details.type || 'elimination';
 		this.users = 0;
 		this.maxUsers = details.maxUsers || null;
@@ -30,7 +32,7 @@ class Tournament {
         this.server.send(data, this.room);
     }
     createTour() {
-        this.send(`/tournament create ${this.format}, ${this.type}`);
+        this.send(`/tournament new ${this.format}, ${this.type}`);
         this.signups = true;
     }
     startTimeout() {
@@ -102,7 +104,6 @@ exports.parse = function (server, room, message, isIntro, spl) {
 	if(!tourData[server.id][room]) tourData[server.id][room] = {};
 	if(!tournaments[server.id]) tournaments[server.id] = {};
 	if(!tournaments[server.id][room]) tournaments[server.id][room] = {};
-    if (!tourData[room]) tourData[room] = {};
     let tourRoom = tournaments[server.id][room];
 	switch (spl[1]) {
 		case 'create':
@@ -146,7 +147,9 @@ exports.parse = function (server, room, message, isIntro, spl) {
             	winners[server.id][room] = data.results[0][0];
 			} catch (e){}
 			// Validar que pueda vocear la felicitacion
-			server.send(`Felicidades **${winners[server.id][room]}**, escoge tier para el siguiente torneo`);
+			let settingsLang = Features('settings').get(server.id).language;
+			let lang = room.language ? room.language : (settingsLang ? settingsLang : server.language);	
+			server.send(Lang.replace(lang, 'congrats', winners[server.id][room]));
 			Leaderboards.onTournamentEnd(server, room, tourData[server.id][room]);
 			delete tourData[server.id][room];
 			if (tourRoom && tourRoom.startTimer) clearTimeout(tourRoom.startTimer);
@@ -160,26 +163,26 @@ exports.parse = function (server, room, message, isIntro, spl) {
 	}
 }
 exports.commands = {
-	tourhelp: function (target, room, user) {
-        this.replyTrad('msg');
-	},
+	tourhelp: true,
+
     tourstart: 'tourend',
 	tourend: function (target, room, user) {
-	//	if (this.roomType !== 'chat' || !this.can('tournament')) return;
-		if (!tourData[this.serverid][room]) return this.replyTrad('err');
-		if (this.cmd === 'tourstart' && !tourData[this.serverid][room].signups) return this.replyTrad('err2');
+		if (/**this.roomType !== 'chat' || */ !this.can('games', true)) return false;
+		if (!tourData[this.serverid]) tourData[this.serverid] = {};
+		if (!tourData[this.serverid][room]) return this.sendReply(Lang.getSub(this.lang, 'tourend', 'err'));
+		if (this.cmd === 'tourstart' && !tourData[this.serverid][room].signups) return this.sendReply(Lang.getSub(this.lang, 'tourend', 'err2'));
         this.sendReply("/tournament " + (this.cmd === 'tourend' ? 'end' : 'start'));
     },
 	maketour: 'tournament',
 	newtour: 'tournament',
 	tour: 'tournament',
 	tournament: function (target, room, user) {
-        //if (this.roomType !== 'chat' || !this.can('tournament')) return;
-        if (!tourData[this.serverid]) tourData[this.serverid] = {};
+        if (/*this.roomType !== 'chat' || */ !this.can('games', true)) return false;
+		if (!tourData[this.serverid]) tourData[this.serverid] = {};
 		if (tourData[this.serverid][room]) {
 			if (toId(target) === 'end') return this.runCmd('tourend');
 			if (toId(target) === 'start') return this.runCmd('tourstart');
-			return this.replyTrad('e2');
+			return this.sendReply(Lang.getSub(this.lang, 'tour', 'e2'));
 		}
 		let details = {
 			format: 'ou',
@@ -257,13 +260,13 @@ exports.commands = {
 							params.scout = valueArg;
 							break;
 						default:
-                            return this.replyTrad('paramerror', idArg, ' tier, timer, dq, users, type, scout');
+                            return this.sendReply(Lang.replaceSub(this.lang, 'paramerror', idArg, ' tier, timer, dq, users, type, scout'));
 					}
 				}
 			}
 			if (params.format) {
 				var format = Tools.parseAliases(params.format);
-				if (!this.bot.formats[format] || !this.bot.formats[format].chall) return this.replyTrad('invalid_format', format);
+				if (!this.bot.formats[format] || !this.bot.formats[format].chall) return this.sendReply(Lang.replaceSub(this.lang, 'tour','invalid_format', format));
 				details.format = format;
 			}
 			if (params.timeToStart) {
@@ -271,7 +274,7 @@ exports.commands = {
 					details.timeToStart = null;
 				} else {
 					var time = parseInt(params.timeToStart);
-					if (!time || time < 10) return this.replyTrad('e4');
+					if (!time || time < 10) return this.sendReply(Lang.getSub(this.lang, 'tour', 'e4'));
 					details.timeToStart = time * 1000;
 				}
 			}
@@ -280,7 +283,7 @@ exports.commands = {
 					details.autodq = false;
 				} else {
 					var dq = parseFloat(params.autodq);
-					if (!dq || dq < 0) return this.replyTrad('e5');
+					if (!dq || dq < 0) return this.sendReply(Lang.getSub(this.lang, 'tour', 'e5'));
 					details.autodq = dq;
 				}
 			}
@@ -289,13 +292,13 @@ exports.commands = {
 					details.maxUsers = null;
 				} else {
 					var musers = parseInt(params.maxUsers);
-					if (!musers || musers < 4) return this.replyTrad('e6');
+					if (!musers || musers < 4) return this.sendReply(Lang.getSub(this.lang, 'tour', 'e6'));
 					details.maxUsers = musers;
 				}
 			}
 			if (params.type) {
 				var type = toId(params.type);
-				if (type !== 'elimination' && type !== 'roundrobin') return this.replyTrad('e7');
+				if (type !== 'elimination' && type !== 'roundrobin') return this.sendReply(Lang.getSub(this.lang, 'tour', 'e7'));;
 				details.type = type;
 			}
 			if (params.scout) {
@@ -307,7 +310,7 @@ exports.commands = {
 		newTour(this.bot, room, details);
 		setTimeout(() => {
 			if (tournaments[this.serverid][room] && !tourData[this.serverid][room]) {
-                this.replyTrad('notstarted');
+				this.sendReply(Lang.getSub(this.lang, 'tour', 'notstarted'));
 				delete tournaments[this.serverid][room];
 			}
 		}, 2500);
@@ -315,16 +318,16 @@ exports.commands = {
 	unofficial: 'official',
 	official: function (target, room, user) {
 		//if (!this.can("official")) return;
-		if (!Leaderboards.isConfigured(this.serverid, room)) return this.replyTrad('not', room);
-		if (!tourData[this.serverid][room]) return this.replyTrad("notour");
+		if (!Leaderboards.isConfigured(this.serverid, room)) return this.sendReply(Lang.replaceSub(this.lang, 'official', 'not', room));
+		if (!tourData[this.serverid][room]) return this.sendReply(Lang.getSub(this.lang, 'official',"notour"));
 		if (this.cmd === "unofficial") {
-			if (!tourData[this.serverid][room].isOfficialTour) return this.replyTrad("already-not");
+			if (!tourData[this.serverid][room].isOfficialTour) return this.sendReply(Lang.getSub(this.lang, 'official',"already-not"));
 			tourData[this.serverid][room].isOfficialTour = false;
-			this.replyTrad("unofficial");
+			this.sendReply(Lang.getSub(this.lang, 'official', "unofficial"));
 		} else {
-			if (tourData[this.serverid][room].isOfficialTour) return this.replyTrad("already");
+			if (tourData[this.serverid][room].isOfficialTour) return this.sendReply(Lang.getSub(this.lang, 'official',"already"));
 			tourData[room][this.serverid].isOfficialTour = true;
-			this.replyTrad("official");
+			this.sendReply(Lang.getSub(this.lang, 'official',"official"));
 		}
     },
     /*

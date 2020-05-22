@@ -1,3 +1,5 @@
+const Lang = Features('languages').load();
+
 exports.commands = {
     '?': 'help',
     h: 'help',
@@ -11,7 +13,7 @@ exports.commands = {
 			var altCommandHelp;
 			var helpCmd;
 			var targets = target.split(' ');
-			var allCommands = Chat.discordCommands;
+			var allCommands = this.bot.id === 'discord' ? Chat.discordCommands : Chat.psCommands;
 			if (typeof allCommands[target] === 'string') {
 				// If a function changes with command name, help for that command name will be searched first.
 				altCommandHelp = target + 'help';
@@ -35,21 +37,24 @@ exports.commands = {
 				helpCmd = target + 'help';
 			}
 			if (helpCmd in allCommands) {
-				let id = this.bot.language;
-                if (Array.isArray(allCommands[helpCmd])) {
-					this.sendReply(Features('languages').get(id, target)['msg']);
+				if(allCommands[helpCmd] === true) {
+					const HelpLang = Features('languages').loadHelp();
+					this.sendReply(HelpLang.get(this.lang, target));
 				}
+                /*if (Array.isArray(allCommands[helpCmd])) {
+					this.sendReply(Lang.getSub(this.lang, target, 'msg'));
+				}*/
 			}
 		}
 	},
     version: function(target, room, user) {
-		return this.replyTrad('msg', Chat.packageData.version);
+		return this.sendReply(Lang.replace(this.lang, 'version', Chat.packageData.version));
     },
     say: function(target, user) {
         if(!target) return this.runHelp('say');
 		this.sendReply(target);
     },
-    sayhelp: ['msg'],
+    sayhelp: true,
 	eval: function(target) {
 		if(!this.can('hotpatch', true)) return false;
 		if(this.bot.id !== 'discord') {
@@ -58,13 +63,26 @@ exports.commands = {
 			this.sendReply(eval(target));
 		}
 	},
+	uptime: function() {
+		const uptime = process.uptime();
+		let uptimeText;
+		if (uptime > 24 * 60 * 60) {
+		const uptimeDays = Math.floor(uptime / (24 * 60 * 60));
+		uptimeText = uptimeDays + " " + (uptimeDays === 1 ? "day" : "days");
+		const uptimeHours = Math.floor(uptime / (60 * 60)) - uptimeDays * 24;
+		if (uptimeHours) uptimeText += ", " + uptimeHours + " " + (uptimeHours === 1 ? "hour" : "hours");
+		} else {
+		uptimeText = Tools.toDurationString(uptime * 1000);
+		}
+		this.sendReply("Uptime: **" + uptimeText + "**");
+	},
     pick: function(target) {
         if (!target || !target.includes(',')) {
             return this.runHelp('pick');
         }
         const options = target.split(',');
-        const pickedOption = options[Math.floor(Math.random() * options.length)].trim();
-		this.replyTrad('choose', pickedOption);
+		const pickedOption = options[Math.floor(Math.random() * options.length)].trim();
+		this.sendReply(Lang.replace(this.lang, 'pick', pickedOption));
     },
-    pickhelp: ['msg'],
+    pickhelp: true,
 };

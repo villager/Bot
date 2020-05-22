@@ -19,6 +19,9 @@
         "sugar": "1.4.1",
         "sockjs-client": "1.1.4"
     },
+    "optionalDependencies": {
+        "githubhook": "^1.9.3"
+    },
     "url": "https://github.com/villager/Bot",
     "license": "MIT",
     "private": true

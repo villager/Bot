@@ -1,0 +1,24 @@
+{
+    "en": {
+        "data": {
+            "target": "You need to set a target",
+            "atk": "Attack",
+            "def": "Deffense",
+            "spe": "Speed",
+            "spa": "Special Attack",
+            "spd": "Special Deffense",
+            "hp": "Health"
+        }
+    },
+    "es": {
+        "data": {
+            "target": "Necesitas especificar un Pokemon",
+            "atk": "Ataque",
+            "def": "Defensa",
+            "spe": "Velocidad",
+            "spa": "Ataque Especial",
+            "spd": "Defensa Especial",
+            "hp": "Vida"
+        }
+    }
+}

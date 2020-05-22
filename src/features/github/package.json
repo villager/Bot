@@ -1,0 +1,9 @@
+{
+    "name": "Github",
+    "version": "1.0.0",
+    "main": "index.js",
+    "author": {
+        "name": "Xifi"
+    },
+    "private": false
+}

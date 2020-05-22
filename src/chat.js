@@ -15,7 +15,9 @@ Chat.loadPlugins = function() {
     */
     let globalFiles = Tools.FS('./plugins').readdirSync();
     for (const file of globalFiles) {
+        if(file.substr(-5) === '.json') continue;
         const plugin = require(`./plugins/${file.slice(0, -3)}`);
+
         if(plugin.commands) Object.assign(Chat.globalCommands, plugin.commands);
     }    
     /**
@@ -23,6 +25,7 @@ Chat.loadPlugins = function() {
     */
     let discordFiles = Tools.FS('./discord/plugins').readdirSync();
     for (const file of discordFiles) {
+        if(file.substr(-5) === '.json') continue;
         const plugin = require(`./discord/plugins/${file.slice(0, -3)}`);
         if(plugin.commands) Object.assign(Chat.discordCommands, plugin.commands);
     }
@@ -32,6 +35,7 @@ Chat.loadPlugins = function() {
      */
     let psFiles = Tools.FS('./showdown/plugins').readdirSync();
     for (const file of psFiles) {
+        if(file.substr(-5) === '.json') continue;
         const plugin = require(`./showdown/plugins/${file.slice(0, -3)}`);
         if(plugin.commands) Object.assign(Chat.psCommands, plugin.commands);
     }

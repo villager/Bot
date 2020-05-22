@@ -92,21 +92,10 @@ class Parser {
     sendReply(data) {
         this.channel.send(data);
 	}
-	langReply(msg, ...args) {
-		let i = 1;
+	get lang() {
 		let settingsLang = Features('settings').get(this.bot.id).language;
-		let language = this.bot.language;
-		if(settingsLang) language = settingsLang; // Settings is the king
-		let output = Features.get('languages').get(language, this.cmd)[msg];
-		for (const arg of args) {
-			output = output.replace(`$${i}`,arg);
-			i++;
-		}
-		return output;
-	}
-	replyTrad(msg, ...args) {
-		this.sendReply(this.langReply(msg, ...args));
-
+		let lang = (settingsLang ? settingsLang :this.bot.language);
+		return lang;
 	}
     linkifyReply(title, data, url) {
         this.sendReply(Embed.notify(title, data).setURL(url));

@@ -77,10 +77,6 @@ class Parser {
 
 		return commandHandler;
 	}
-	canBox(user) {
-		let RANK_PERMISSION = ['*', '#', '&', '~'];
-		if (toId(user)) {}
-	}
 	sendStrict(data) {
 		if(this.pmTarget) {
 			return this.bot.send(`/pm ${this.pmTarget}, ${data}`, this.room);	
@@ -92,9 +88,6 @@ class Parser {
 			}
 		}		
 	}
-	strictTrad(msg, ...args) {
-		return this.sendStrict(this.langReply(msg, ...args));
-	}
 	sendReply(data) {
 		if(this.pmTarget) {
 			this.bot.send(`/pm ${this.pmTarget}, ${data}`, this.room);	
@@ -102,21 +95,10 @@ class Parser {
 			this.bot.send(data, this.room);			
 		}
 	}
-	langReply(msg, ...args) {
-		let i = 1;
+	get lang() {
 		let settingsLang = Features('settings').get(this.bot.id).language;
-		let language = this.bot.language;
-		if(settingsLang) language = settingsLang; // Settings is the king
-		let output = Features.get('languages').get(language, this.cmd)[msg];
-		for (const arg of args) {
-			output = output.replace(`$${i}`,arg);
-			i++;
-		}
-		return output;
-	}
-	replyTrad(msg, ...args) {
-		this.sendReply(this.langReply(msg, ...args));
-
+		let lang = this.room.language ? this.room.language : (settingsLang ? settingsLang :this.bot.language);
+		return lang;
 	}
 	can(permission, broadcast) {
 		if(Chat.hasAuth(this.bot.id, this.user, permission)) return true;
